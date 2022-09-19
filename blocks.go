@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/aquilax/truncate"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -21,9 +23,7 @@ func newBlockRow(h *types.Header) blockRow {
 }
 
 func (r blockRow) Time() *cview.TableCell {
-	t := time.Unix(int64(r.header.Time), 0)
-
-	human := t.Format("01/02/06 3:04 pm")
+	human := formatUnixTime(r.header.Time)
 	return cview.NewTableCell(human)
 }
 
@@ -34,7 +34,10 @@ func (r blockRow) Number() *cview.TableCell {
 func (r blockRow) Hash() *cview.TableCell {
 	hash := r.header.Hash().String()
 	tr := truncate.Truncate(hash, truncSize, "...", truncate.PositionMiddle)
-	return cview.NewTableCell(tr)
+	cell := cview.NewTableCell(tr)
+	// set the row's reference
+	cell.SetReference(r.header.Hash())
+	return cell
 }
 
 func (r blockRow) Parent() *cview.TableCell {
@@ -107,6 +110,21 @@ func NewBlockTable(app App) *BlockTable {
 	table.SetBorders(true)
 	table.SetFixed(0, 0)
 	table.SetSelectable(true, false)
+	table.SetSelectedFunc(func(row, _c int) {
+		// referene is currently only set on hash cell = col 2
+		cell := table.GetCell(row, 2)
+		ref := cell.GetReference()
+		hash, ok := ref.(common.Hash)
+		if !ok {
+			log.Fatal("reference was not a hash")
+		}
+		block, err := app.client.BlockByHash(context.TODO(), hash)
+		if err != nil {
+			log.Fatal(err)
+		}
+		table.app.ShowBlockData(block)
+
+	})
 
 	table.setTableHeader()
 	table.ch = app.broker.SubscribeHeaders()

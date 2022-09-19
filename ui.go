@@ -5,6 +5,7 @@ import (
 
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -24,6 +25,11 @@ func NewApp(client *ethclient.Client) App {
 		bindings: cbind.NewConfiguration(),
 		broker:   NewBroker(client),
 	}
+}
+
+func (a App) ShowBlockData(b *types.Block) {
+	bd := NewBlockData(a.client, b)
+	a.app.SetRoot(bd, true)
 }
 
 func (a App) Start() {
