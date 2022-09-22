@@ -8,6 +8,7 @@ import (
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gdamore/tcell/v2"
 	"github.com/kataras/golog"
 )
 
@@ -29,6 +30,7 @@ func NewApp(client *ethclient.Client) *App {
 		panic(err)
 	}
 	log := golog.New().SetOutput(logFile)
+
 	return &App{
 		client:   client,
 		app:      cview.NewApplication(),
@@ -39,6 +41,15 @@ func NewApp(client *ethclient.Client) *App {
 		log:      log,
 		signer:   getSigner(context.TODO(), client),
 	}
+}
+
+func (a *App) setBindings() {
+	a.bindings.SetKey(tcell.ModNone, tcell.KeyEsc, func(ev *tcell.EventKey) *tcell.EventKey {
+		a.ShowBlocks()
+		return nil
+	})
+
+	a.app.SetInputCapture(a.bindings.Capture)
 }
 
 func (a *App) ShowBlockData(b *types.Block) {
@@ -67,6 +78,8 @@ func (a *App) ShowBlocks() {
 
 func (a *App) Start() {
 	defer a.app.HandlePanic()
+
+	a.setBindings()
 
 	blockTable := NewBlockTable(a)
 	a.views["blocks"] = blockTable
