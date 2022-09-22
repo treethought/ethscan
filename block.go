@@ -33,8 +33,6 @@ func (d *BlockData) setBindings() {
 }
 
 func (d *BlockData) focusBlocks(_ev *tcell.EventKey) *tcell.EventKey {
-	d.app.log.Info("SHOWING BLOCKS")
-
 	d.app.ShowBlocks()
 	return _ev
 }

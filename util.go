@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/big"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/aquilax/truncate"
@@ -72,4 +75,20 @@ func GetEIP1559Fee(rec *types.Receipt, txn *types.Transaction, baseFee *big.Int)
 func GetLegacyFee(txn *types.Transaction, rec *types.Receipt) *big.Int {
 	return new(big.Int).Mul(txn.GasPrice(), new(big.Int).SetUint64(rec.GasUsed))
 
+}
+
+func openbrowser(url string) error {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	return err
 }
