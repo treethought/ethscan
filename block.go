@@ -88,7 +88,7 @@ func (d *BlockData) render() {
 	d.SetColumns(-1, -3, 0)
 	d.SetBorders(true)
 
-	d.AddItem(d.blockHeaders(), 0, 0, 1, 3, 0, 0, true)
+	d.AddItem(d.blockHeaders(), 0, 0, 1, 3, 0, 0, false)
 
 	txns := NewTransactionTable(d.app, d.block)
 	d.AddItem(txns, 1, 0, 2, 3, 0, 0, true)

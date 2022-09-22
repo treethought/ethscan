@@ -19,6 +19,7 @@ type App struct {
 	broker   *Broker
 	views    map[string]cview.Primitive
 	log      *golog.Logger
+	signer   types.Signer
 }
 
 func NewApp(client *ethclient.Client) *App {
@@ -36,6 +37,7 @@ func NewApp(client *ethclient.Client) *App {
 		broker:   NewBroker(client),
 		views:    make(map[string]cview.Primitive),
 		log:      log,
+		signer:   getSigner(context.TODO(), client),
 	}
 }
 
