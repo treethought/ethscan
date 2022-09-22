@@ -92,4 +92,6 @@ func (d *BlockData) render() {
 
 	txns := NewTransactionTable(d.app, d.block)
 	d.AddItem(txns, 1, 0, 2, 3, 0, 0, true)
+	d.app.app.SetFocus(txns)
+
 }
