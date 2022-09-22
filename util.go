@@ -6,10 +6,21 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/aquilax/truncate"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/shopspring/decimal"
+	"github.com/ethereum/go-ethereum/params"
+	ens "github.com/wealdtech/go-ens/v3"
 )
+
+func formatAddress(client *ethclient.Client, addr common.Address) string {
+	name, err := ens.ReverseResolve(client, addr)
+	if err == nil {
+		return name
+	}
+	return truncate.Truncate(addr.Hex(), truncSize, "...", truncate.PositionMiddle)
+}
 
 func formatTime(t time.Time) string {
 	return t.Format("01/02/06 3:04 pm")
@@ -20,24 +31,14 @@ func formatUnixTime(t uint64) string {
 	return formatTime(tm)
 }
 
-func ToDecimal(ivalue interface{}, decimals int) decimal.Decimal {
-	value := new(big.Int)
-	switch v := ivalue.(type) {
-	case string:
-		value.SetString(v, 10)
-	case *big.Int:
-		value = v
-	}
-
-	mul := decimal.NewFromFloat(float64(10)).Pow(decimal.NewFromFloat(float64(decimals)))
-	num, _ := decimal.NewFromString(value.String())
-	result := num.Div(mul)
-
-	return result
-}
-
-func toEth(w *big.Int) *big.Int {
-	return new(big.Int).Div(w, big.NewInt(1000000000000000000))
+func weiToEther(wei *big.Int) *big.Float {
+	f := new(big.Float)
+	f.SetPrec(236) //  IEEE 754 octuple-precision binary floating-point format: binary256
+	f.SetMode(big.ToNearestEven)
+	fWei := new(big.Float)
+	fWei.SetPrec(236) //  IEEE 754 octuple-precision binary floating-point format: binary256
+	fWei.SetMode(big.ToNearestEven)
+	return f.Quo(fWei.SetInt(wei), big.NewFloat(params.Ether))
 }
 
 func getSigner(ctx context.Context, client *ethclient.Client) types.Signer {
