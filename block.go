@@ -3,26 +3,53 @@ package main
 import (
 	"fmt"
 
+	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gdamore/tcell/v2"
 )
 
 type BlockData struct {
-	*cview.Flex
-	client *ethclient.Client
-	block  *types.Block
+	*cview.Grid
+	block    *types.Block
+	bindings *cbind.Configuration
+	app      *App
 }
 
-func NewBlockData(client *ethclient.Client, block *types.Block) *BlockData {
-	bd := &BlockData{client: client, block: block, Flex: cview.NewFlex()}
+func NewBlockData(app *App, block *types.Block) *BlockData {
+	bd := &BlockData{app: app, block: block, Grid: cview.NewGrid()}
+	bd.SetBackgroundColor(tcell.ColorPink)
+
+	bd.setBindings()
 	bd.render()
 	return bd
 }
 
-func (d BlockData) blockHeaders() *cview.List {
+func (d *BlockData) setBindings() {
+	bind := cbind.NewConfiguration()
+	bind.SetKey(tcell.ModNone, tcell.KeyEsc, d.focusBlocks)
+	d.bindings = bind
+	d.SetInputCapture(d.bindings.Capture)
+}
+
+func (d *BlockData) focusBlocks(_ev *tcell.EventKey) *tcell.EventKey {
+	d.app.log.Info("SHOWING BLOCKS")
+
+	d.app.ShowBlocks()
+	return _ev
+}
+
+func (d *BlockData) SetBlock(block *types.Block) {
+	d.app.app.QueueUpdateDraw(func() {
+		d.block = block
+		d.render()
+	})
+}
+
+func (d *BlockData) blockHeaders() *cview.List {
 	l := cview.NewList()
 	l.SetTitle("Headers")
+	l.SetSelectedTextColor(tcell.ColorPink)
 
 	number := d.block.Number().String()
 	hash := d.block.Hash().String()
@@ -49,15 +76,20 @@ func (d BlockData) blockHeaders() *cview.List {
 
 }
 
-func (d BlockData) render() {
-	// headers
+func (d *BlockData) render() {
+	d.Clear()
 
-	d.AddItem(d.blockHeaders(), 0, 1, false)
-	d.AddItem(nil, 0, 1, false)
+	if d.block == nil {
+		return
+	}
 
-	txns := cview.NewList()
-	txns.SetTitle("Transactions")
-	d.AddItem(txns, 0, 3, true)
+	d.SetBorders(true)
+	d.SetRows(0, 0, 0)
+	d.SetColumns(-1, -3, 0)
+	d.SetBorders(true)
 
-	d.SetTitle(fmt.Sprintf("Block #%s", d.block.Number().String()))
+	d.AddItem(d.blockHeaders(), 0, 0, 1, 3, 0, 0, true)
+
+	txns := NewTransactionTable(d.app, d.block)
+	d.AddItem(txns, 1, 0, 2, 3, 0, 0, true)
 }

@@ -80,14 +80,14 @@ func (r blockRow) ExtraData() *cview.TableCell {
 
 type BlockTable struct {
 	*cview.Table
-	app     App
+	app     *App
 	headers []*types.Header
 	fields  []string
 
 	ch chan *types.Header
 }
 
-func NewBlockTable(app App) *BlockTable {
+func NewBlockTable(app *App) *BlockTable {
 	table := &BlockTable{
 		Table:   cview.NewTable(),
 		headers: nil,
@@ -111,6 +111,7 @@ func NewBlockTable(app App) *BlockTable {
 	table.SetFixed(0, 0)
 	table.SetSelectable(true, false)
 	table.SetSelectedFunc(func(row, _c int) {
+		table.app.log.Info("Selected block - row ", row)
 		// referene is currently only set on hash cell = col 2
 		cell := table.GetCell(row, 2)
 		ref := cell.GetReference()
@@ -118,9 +119,10 @@ func NewBlockTable(app App) *BlockTable {
 		if !ok {
 			log.Fatal("reference was not a hash")
 		}
+		table.app.log.Info("Row reference hash: ", hash.String())
 		block, err := app.client.BlockByHash(context.TODO(), hash)
 		if err != nil {
-			log.Fatal(err)
+			table.app.log.Fatal(err)
 		}
 		table.app.ShowBlockData(block)
 
