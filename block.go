@@ -48,6 +48,10 @@ func (d *BlockData) SetBlock(block *types.Block) {
 		d.render()
 	})
 }
+func (d *BlockData) Update() {
+	curBlock := d.app.state.block
+	d.SetBlock(curBlock)
+}
 
 func (d *BlockData) blockHeaders() *cview.Flex {
 	f := cview.NewFlex()
@@ -100,6 +104,7 @@ func (d *BlockData) render() {
 
 	txns := NewTransactionTable(d.app, d.block)
 	d.AddItem(txns, 1, 0, 2, 3, 0, 0, true)
+
 	d.app.app.SetFocus(txns)
 
 }

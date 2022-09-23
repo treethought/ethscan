@@ -10,7 +10,7 @@ import (
 )
 
 type TransactionData struct {
-	cview.List
+	*cview.List
 	app      *App
 	bindings *cbind.Configuration
 	txn      *types.Transaction
@@ -18,7 +18,7 @@ type TransactionData struct {
 
 func NewTransactionData(app *App, txn *types.Transaction) *TransactionData {
 	d := &TransactionData{
-		List: *cview.NewList(),
+		List: cview.NewList(),
 		app:  app,
 		txn:  txn,
 	}
@@ -26,11 +26,16 @@ func NewTransactionData(app *App, txn *types.Transaction) *TransactionData {
 
 }
 
+func (d *TransactionData) Update() {
+	txn := d.app.state.txn
+	d.SetTransaction(txn)
+}
+
 func (d *TransactionData) SetTransaction(txn *types.Transaction) {
+	if d.txn != nil && d.txn.Hash() == txn.Hash() {
+		return
+	}
 	d.app.app.QueueUpdateDraw(func() {
-		if d.txn != nil && d.txn.Hash() == txn.Hash() {
-			return
-		}
 		d.Clear()
 		d.txn = txn
 		d.render()

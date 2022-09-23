@@ -55,6 +55,11 @@ func (s *State) RevertView() {
 	s.currentView = prev
 	return
 }
+
+type View interface {
+	Update()
+}
+
 type App struct {
 	client   *ethclient.Client
 	app      *cview.Application
@@ -62,7 +67,7 @@ type App struct {
 	focus    *cview.FocusManager
 	bindings *cbind.Configuration
 	broker   *Broker
-	views    map[string]cview.Primitive
+	views    map[string]View
 	log      *golog.Logger
 	signer   types.Signer
 	state    *State
@@ -82,7 +87,7 @@ func NewApp(client *ethclient.Client) *App {
 		focus:    nil,
 		bindings: cbind.NewConfiguration(),
 		broker:   NewBroker(client),
-		views:    make(map[string]cview.Primitive),
+		views:    make(map[string]View),
 		log:      log,
 		signer:   getSigner(context.TODO(), client),
 		state:    &State{},
@@ -119,6 +124,7 @@ func (app *App) initBlockFeed() *cview.Flex {
 
 func (app *App) initTxnData() *cview.Flex {
 	app.log.Debug("initializing block feed layout")
+
 	txnData := NewTransactionData(app, nil)
 	app.views["txnData"] = txnData
 
@@ -180,15 +186,7 @@ func (a *App) ShowBlockData(b *types.Block) {
 		a.log.Error("block view not set")
 		panic("block view not set")
 	}
-	bdata, ok := bd.(*BlockData)
-	if !ok {
-		a.log.Error("was not blockdata")
-		panic("was not blockdata")
-	}
-	a.log.Info("setting block")
-
-	bdata.SetBlock(b)
-
+	bd.Update()
 	a.ShowView("blockData")
 }
 
@@ -204,23 +202,8 @@ func (a *App) ShowBlocks() {
 
 func (a *App) ShowTransactonData(txn *types.Transaction) {
 	a.log.Info("showing txn data for: ", txn.Hash().String())
-
-	// TODO: setup state to pull current tx from inside widget
-	// instead of calling SetTransaction
-	bd, ok := a.views["txnData"]
-	if !ok {
-		a.log.Error("txn view not set")
-		panic("txn view not set")
-	}
-	tdata, ok := bd.(*TransactionData)
-	if !ok {
-		a.log.Error("was not txn data")
-		panic("was not txn data")
-	}
-	a.log.Info("setting txn")
-
-	tdata.SetTransaction(txn)
-
+	txnData := a.views["txnData"]
+	txnData.Update()
 	a.ShowView("txnData")
 }
 func (a *App) Start() {

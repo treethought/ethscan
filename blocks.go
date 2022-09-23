@@ -135,6 +135,8 @@ func NewBlockTable(app *App) *BlockTable {
 		if err != nil {
 			table.app.log.Fatal(err)
 		}
+		table.app.state.SetBlock(block)
+		table.app.state.SetTxn(nil)
 		table.app.ShowBlockData(block)
 
 	})
@@ -146,6 +148,7 @@ func NewBlockTable(app *App) *BlockTable {
 	return table
 
 }
+func (t *BlockTable) Update() {}
 
 func (t *BlockTable) initBindings() {
 	t.bindings = cbind.NewConfiguration()

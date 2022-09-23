@@ -51,6 +51,8 @@ func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 		}
 
 		table.app.log.Info("Row reference txn hash: ", txn.Hash().String())
+		table.app.state.SetBlock(block)
+		table.app.state.SetTxn(txn)
 		table.app.ShowTransactonData(txn)
 	})
 
