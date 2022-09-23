@@ -26,7 +26,7 @@ func formatAddress(client *ethclient.Client, addr common.Address) string {
 }
 
 func formatTime(t time.Time) string {
-	return t.Format("01/02/06 3:04 pm")
+	return t.Format("01/02/06 15:04")
 }
 
 func formatUnixTime(t uint64) string {

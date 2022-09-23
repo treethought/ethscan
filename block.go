@@ -5,6 +5,7 @@ import (
 
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
+	"github.com/aquilax/truncate"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gdamore/tcell/v2"
 )
@@ -19,6 +20,7 @@ type BlockData struct {
 func NewBlockData(app *App, block *types.Block) *BlockData {
 	bd := &BlockData{app: app, block: block, Grid: cview.NewGrid()}
 	bd.SetBackgroundColor(tcell.ColorPink)
+	bd.SetBordersColor(tcell.ColorBlue)
 
 	bd.setBindings()
 	bd.render()
@@ -44,33 +46,38 @@ func (d *BlockData) SetBlock(block *types.Block) {
 	})
 }
 
-func (d *BlockData) blockHeaders() *cview.List {
-	l := cview.NewList()
-	l.SetTitle("Headers")
-	l.SetSelectedTextColor(tcell.ColorPink)
+func (d *BlockData) blockHeaders() *cview.Flex {
+	f := cview.NewFlex()
+	f.SetDirection(cview.FlexColumn)
+
+	basic := cview.NewList()
+	details := cview.NewList()
 
 	number := d.block.Number().String()
-	hash := d.block.Hash().String()
+	hash := truncate.Truncate(d.block.Hash().String(), 10, "...", truncate.PositionMiddle)
 	time := formatUnixTime(d.block.Time())
 	parent := d.block.ParentHash().String()
-	coinbase := d.block.Coinbase().String()
+	coinbase := truncate.Truncate(d.block.Coinbase().String(), 10, "...", truncate.PositionMiddle)
 	gasLimit := d.block.GasLimit()
 	gasUsed := d.block.GasUsed()
-	baseFee := d.block.BaseFee()
-	root := d.block.Root().String()
+	baseFee := weiToEther(d.block.BaseFee()).String()
+	root := truncate.Truncate(d.block.Root().String(), 10, "...", truncate.PositionMiddle)
 	extraData := string(d.block.Extra())
 
-	l.AddItem(cview.NewListItem(fmt.Sprintf("Number: %s", number)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("Hash: %s", hash)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("Time: %s", time)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("Parent: %s", parent)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("Coinbase (Proposer): %s", coinbase)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("GasLimit: %d", gasLimit)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("GasUsed: %d", gasUsed)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("BaseFee: %s", baseFee)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("Root: %s", root)))
-	l.AddItem(cview.NewListItem(fmt.Sprintf("ExtraData: %s", extraData)))
-	return l
+	basic.AddItem(cview.NewListItem(fmt.Sprintf("Number: %s", number)))
+	basic.AddItem(cview.NewListItem(fmt.Sprintf("Hash: %s", hash)))
+	basic.AddItem(cview.NewListItem(fmt.Sprintf("Time: %s", time)))
+	basic.AddItem(cview.NewListItem(fmt.Sprintf("Parent: %s", parent)))
+	details.AddItem(cview.NewListItem(fmt.Sprintf("Coinbase (Proposer): %s", coinbase)))
+	details.AddItem(cview.NewListItem(fmt.Sprintf("GasLimit: %d", gasLimit)))
+	details.AddItem(cview.NewListItem(fmt.Sprintf("GasUsed: %d", gasUsed)))
+	details.AddItem(cview.NewListItem(fmt.Sprintf("BaseFee: %s", baseFee)))
+	details.AddItem(cview.NewListItem(fmt.Sprintf("Root: %s", root)))
+	details.AddItem(cview.NewListItem(fmt.Sprintf("ExtraData: %s", extraData)))
+
+	f.AddItem(basic, 0, 1, true)
+	f.AddItem(details, 0, 1, false)
+	return f
 
 }
 

@@ -72,6 +72,11 @@ func (r blockRow) StateRoot() *cview.TableCell {
 	tr := truncate.Truncate(val, truncSize, "...", truncate.PositionMiddle)
 	return cview.NewTableCell(tr)
 }
+func (r blockRow) TxnLength() *cview.TableCell {
+	val := r.header.Root.String()
+	tr := truncate.Truncate(val, truncSize, "...", truncate.PositionMiddle)
+	return cview.NewTableCell(tr)
+}
 func (r blockRow) ExtraData() *cview.TableCell {
 	val := string(r.header.Extra)
 	// tr := truncate.Truncate(val, truncSize, "...", truncate.PositionEnd)
@@ -111,6 +116,9 @@ func NewBlockTable(app *App) *BlockTable {
 	table.SetFixed(0, 0)
 	table.SetSelectable(true, false)
 	table.SetSelectedFunc(func(row, _c int) {
+		if row == 0 {
+			return
+		}
 		table.app.log.Info("Selected block - row ", row)
 		// referene is currently only set on hash cell = col 2
 		cell := table.GetCell(row, 2)
@@ -179,6 +187,7 @@ func (t BlockTable) watch(ctx context.Context) error {
 			t.app.app.QueueUpdateDraw(func() {
 				row := newBlockRow(header)
 				t.addHeaderRow(row)
+				t.Sort(1, true)
 			})
 		case <-ctx.Done():
 			return nil
