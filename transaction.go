@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"code.rocketnine.space/tslocum/cbind"
@@ -10,61 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type TransacionLogs struct {
-	*cview.TreeView
-	logs []*types.Log
-	app  *App
-}
-
-func NewTransactionLogs(app *App, logs []*types.Log) *TransacionLogs {
-	return &TransacionLogs{
-		TreeView: cview.NewTreeView(),
-		logs:     logs,
-		app:      app,
-	}
-}
-
-func (tl *TransacionLogs) Update() {
-	txn := tl.app.state.txn
-
-	tl.app.app.QueueUpdateDraw(func() {
-		rec, err := tl.app.client.TransactionReceipt(context.TODO(), txn.Hash())
-		if err != nil {
-			tl.app.log.Error("failed to get txn receipt")
-			return
-		}
-		tl.logs = rec.Logs
-		tl.render()
-	})
-
-}
-
-func (tl *TransacionLogs) render() {
-	tl.SetTitle("Logs")
-	if tl.GetRoot() != nil {
-		tl.GetRoot().ClearChildren()
-	}
-	tl.SetRoot(cview.NewTreeNode("Logs"))
-
-	if len(tl.logs) == 0 {
-		return
-	}
-	for _, l := range tl.logs {
-		addr := cview.NewTreeNode(fmt.Sprintf("Adress: %s", formatAddress(tl.app.client, l.Address)))
-
-		abi := cview.NewTreeNode(fmt.Sprintf("ABI: %s", string(l.Data)))
-
-		topics := cview.NewTreeNode("Topics")
-		for i, t := range l.Topics {
-			n := cview.NewTreeNode(fmt.Sprintf("%d: %s", i, t.Hex()))
-			topics.AddChild(n)
-		}
-		addr.AddChild(abi)
-		addr.AddChild(topics)
-		tl.GetRoot().AddChild(addr)
-	}
-
-}
 
 type TransactionData struct {
 	*cview.List
