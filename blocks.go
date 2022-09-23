@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/big"
 	"time"
 
+	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/aquilax/truncate"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/gdamore/tcell/v2"
 )
 
 const truncSize = 8
@@ -36,7 +38,7 @@ func (r blockRow) Hash() *cview.TableCell {
 	tr := truncate.Truncate(hash, truncSize, "...", truncate.PositionMiddle)
 	cell := cview.NewTableCell(tr)
 	// set the row's reference
-	cell.SetReference(r.header.Hash())
+	cell.SetReference(r.header.Number)
 	return cell
 }
 
@@ -85,9 +87,10 @@ func (r blockRow) ExtraData() *cview.TableCell {
 
 type BlockTable struct {
 	*cview.Table
-	app     *App
-	headers []*types.Header
-	fields  []string
+	app      *App
+	headers  []*types.Header
+	fields   []string
+	bindings *cbind.Configuration
 
 	ch chan *types.Header
 }
@@ -115,20 +118,22 @@ func NewBlockTable(app *App) *BlockTable {
 	table.SetBorders(true)
 	table.SetFixed(0, 0)
 	table.SetSelectable(true, false)
+	table.SetSelectedStyle(tcell.ColorBlueViolet, tcell.ColorDefault, 0)
 	table.SetSelectedFunc(func(row, _c int) {
 		if row == 0 {
 			return
 		}
 		table.app.log.Info("Selected block - row ", row)
+
 		// referene is currently only set on hash cell = col 2
 		cell := table.GetCell(row, 2)
 		ref := cell.GetReference()
-		hash, ok := ref.(common.Hash)
+		num, ok := ref.(*big.Int)
 		if !ok {
-			log.Fatal("reference was not a hash")
+			log.Fatal("reference was not a big.Int blockNumber")
 		}
-		table.app.log.Info("Row reference hash: ", hash.String())
-		block, err := app.client.BlockByHash(context.TODO(), hash)
+		table.app.log.Info("Row reference number: ", num.String())
+		block, err := app.client.BlockByNumber(context.TODO(), num)
 		if err != nil {
 			table.app.log.Fatal(err)
 		}
@@ -136,15 +141,50 @@ func NewBlockTable(app *App) *BlockTable {
 
 	})
 
+	table.initBindings()
+
 	table.setTableHeader()
 	table.ch = app.broker.SubscribeHeaders()
 	return table
 
 }
 
+func (t *BlockTable) initBindings() {
+	t.bindings = cbind.NewConfiguration()
+	t.SetInputCapture(t.bindings.Capture)
+	t.bindings.SetRune(tcell.ModNone, 'o', t.handleOpen)
+
+}
+
+func (t *BlockTable) getCurrentRef() *big.Int {
+
+	row, _ := t.GetSelection()
+	t.app.log.Info("getting current selected block, row: ", row)
+	ref := t.GetCell(row, 2).GetReference()
+	num, ok := ref.(*big.Int)
+	if !ok {
+		t.app.log.Error("failed to get block ref")
+		return nil
+	}
+	return num
+}
+
+func (t *BlockTable) handleOpen(ev *tcell.EventKey) *tcell.EventKey {
+	curNum := t.getCurrentRef()
+	if curNum == nil {
+		return nil
+	}
+	url := fmt.Sprintf("https://etherscan.io/block/%s", curNum.String())
+	openbrowser(url)
+	return nil
+
+}
+
 func (t BlockTable) setTableHeader() {
 	for col, field := range t.fields {
-		t.SetCell(0, col, cview.NewTableCell(field))
+		cell := cview.NewTableCell(field)
+		cell.SetSelectable(false)
+		t.SetCell(0, col, cell)
 	}
 }
 
@@ -187,7 +227,7 @@ func (t BlockTable) watch(ctx context.Context) error {
 			t.app.app.QueueUpdateDraw(func() {
 				row := newBlockRow(header)
 				t.addHeaderRow(row)
-				t.Sort(1, true)
+				// t.Sort(1, true)
 			})
 		case <-ctx.Done():
 			return nil
