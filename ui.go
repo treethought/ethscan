@@ -128,11 +128,15 @@ func (app *App) initTxnData() *cview.Flex {
 	txnData := NewTransactionData(app, nil)
 	app.views["txnData"] = txnData
 
+	txnLogs := NewTransactionLogs(app, nil)
+	app.views["txnLogs"] = txnLogs
+
 	wrap := cview.NewFlex()
 	wrap.SetBackgroundTransparent(false)
 	wrap.SetBackgroundColor(tcell.ColorDefault)
 	wrap.SetDirection(cview.FlexRow)
 	wrap.AddItem(txnData, 0, 1, true)
+	wrap.AddItem(txnLogs, 0, 1, false)
 
 	return wrap
 
@@ -203,7 +207,9 @@ func (a *App) ShowBlocks() {
 func (a *App) ShowTransactonData(txn *types.Transaction) {
 	a.log.Info("showing txn data for: ", txn.Hash().String())
 	txnData := a.views["txnData"]
+	txnLogs := a.views["txnLogs"]
 	txnData.Update()
+	txnLogs.Update()
 	a.ShowView("txnData")
 }
 func (a *App) Start() {
