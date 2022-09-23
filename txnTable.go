@@ -92,7 +92,6 @@ func (t *TransactionTable) getTransactions() {
 	}
 	t.app.log.Info("iterating txns: ", len(t.block.Transactions()))
 	for i, txn := range t.block.Transactions() {
-		t.app.log.Infof("adding txn num %d: %s", i, txn.Hash().String())
 		t.addTxn(context.TODO(), i+1, txn)
 	}
 
@@ -106,7 +105,8 @@ func (t TransactionTable) setHeader() {
 	t.SetCell(0, 4, cview.NewTableCell("To"))
 	t.SetCell(0, 5, cview.NewTableCell("Value (Eth)"))
 	t.SetCell(0, 6, cview.NewTableCell("Fee (Eth)"))
-	t.SetCell(0, 7, cview.NewTableCell("Status"))
+	t.SetCell(0, 7, cview.NewTableCell("Logs"))
+	t.SetCell(0, 8, cview.NewTableCell("Status"))
 	t.SetFixed(1, 0)
 }
 
@@ -146,7 +146,8 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		t.SetCell(row, 5, cview.NewTableCell(weiToEther(txn.Value()).String()))
 		fee := getFee(receipt, txn, t.block.BaseFee())
 		t.SetCell(row, 6, cview.NewTableCell(weiToEther(fee).String()))
-		t.SetCell(row, 7, cview.NewTableCell(statusText))
+		t.SetCell(row, 7, cview.NewTableCell(fmt.Sprint(len(receipt.Logs))))
+		t.SetCell(row, 8, cview.NewTableCell(statusText))
 	})
 	// go t.resolveAddresses(row)
 }
