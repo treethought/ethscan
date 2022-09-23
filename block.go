@@ -41,6 +41,9 @@ func (d *BlockData) focusBlocks(_ev *tcell.EventKey) *tcell.EventKey {
 
 func (d *BlockData) SetBlock(block *types.Block) {
 	d.app.app.QueueUpdateDraw(func() {
+		if d.block != nil && d.block.Hash() == block.Hash() {
+			return
+		}
 		d.block = block
 		d.render()
 	})
