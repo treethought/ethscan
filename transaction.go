@@ -28,10 +28,10 @@ func NewTransactionData(app *App, txn *types.Transaction) *TransactionData {
 
 func (d *TransactionData) SetTransaction(txn *types.Transaction) {
 	d.app.app.QueueUpdateDraw(func() {
-		d.Clear()
 		if d.txn != nil && d.txn.Hash() == txn.Hash() {
 			return
 		}
+		d.Clear()
 		d.txn = txn
 		d.render()
 	})
@@ -53,7 +53,6 @@ func (d *TransactionData) render() {
 	if err != nil {
 		d.app.log.Error("failed to get txn as message: ", err)
 	}
-
 
 	hash := cview.NewListItem("Hash")
 	hash.SetSecondaryText(d.txn.Hash().Hex())

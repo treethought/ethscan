@@ -45,15 +45,13 @@ func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 		}
 		table.app.log.Info("Selected txn - row ", row)
 
-		cell := table.GetCell(row, 0)
-		ref := cell.GetReference()
-		txn, ok := ref.(*types.Transaction)
-		if !ok {
+		txn := table.getCurrentRef()
+		if txn == nil {
 			log.Fatal("reference was not a txn")
 		}
+
 		table.app.log.Info("Row reference txn hash: ", txn.Hash().String())
 		table.app.ShowTransactonData(txn)
-
 	})
 
 	go table.getTransactions()

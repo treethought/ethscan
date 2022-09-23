@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"sync"
 
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
@@ -12,6 +13,48 @@ import (
 	"github.com/kataras/golog"
 )
 
+type State struct {
+	sync.Mutex
+	block       *types.Block
+	txn         *types.Transaction
+	history     []string
+	currentView string
+}
+
+func (s *State) SetBlock(b *types.Block) {
+	s.Lock()
+	defer s.Unlock()
+	s.block = b
+}
+func (s *State) SetTxn(t *types.Transaction) {
+	s.Lock()
+	defer s.Unlock()
+	s.txn = t
+}
+
+func (s *State) SetView(p string) {
+	s.Lock()
+	defer s.Unlock()
+	s.history = append([]string{s.currentView}, s.history...)
+	s.currentView = p
+}
+
+func (s *State) RevertView() {
+	s.Lock()
+	defer s.Unlock()
+	if len(s.history) == 0 {
+		return
+	}
+	prev := s.history[0]
+	if len(s.history) == 1 {
+		s.history = []string{}
+		s.currentView = prev
+		return
+	}
+	s.history = s.history[1:]
+	s.currentView = prev
+	return
+}
 type App struct {
 	client   *ethclient.Client
 	app      *cview.Application
@@ -22,6 +65,7 @@ type App struct {
 	views    map[string]cview.Primitive
 	log      *golog.Logger
 	signer   types.Signer
+	state    *State
 }
 
 func NewApp(client *ethclient.Client) *App {
@@ -41,6 +85,7 @@ func NewApp(client *ethclient.Client) *App {
 		views:    make(map[string]cview.Primitive),
 		log:      log,
 		signer:   getSigner(context.TODO(), client),
+		state:    &State{},
 	}
 }
 
@@ -110,11 +155,17 @@ func (app *App) initViews() {
 
 	app.root = dataPanels
 	app.log.Debug("views ready")
+	app.ShowView("blockFeed")
 }
 
 func (a *App) setBindings() {
 	a.bindings.SetKey(tcell.ModNone, tcell.KeyEsc, func(ev *tcell.EventKey) *tcell.EventKey {
-		a.ShowBlocks()
+		a.state.RevertView()
+		if a.state.currentView == "" {
+			a.root.SetCurrentTab("blockFeed")
+			return nil
+		}
+		a.root.SetCurrentTab(a.state.currentView)
 		return nil
 	})
 
@@ -138,13 +189,17 @@ func (a *App) ShowBlockData(b *types.Block) {
 
 	bdata.SetBlock(b)
 
-	a.root.SetCurrentTab("blockData")
-	// a.app.SetRoot(bd, true)
+	a.ShowView("blockData")
+}
+
+func (a *App) ShowView(v string) {
+	a.root.SetCurrentTab(v)
+	a.state.SetView(v)
 }
 
 func (a *App) ShowBlocks() {
 	a.log.Info("showing blocks")
-	a.root.SetCurrentTab("blockFeed")
+	a.ShowView("blockFeed")
 }
 
 func (a *App) ShowTransactonData(txn *types.Transaction) {
@@ -166,7 +221,7 @@ func (a *App) ShowTransactonData(txn *types.Transaction) {
 
 	tdata.SetTransaction(txn)
 
-	a.root.SetCurrentTab("txnData")
+	a.ShowView("txnData")
 }
 func (a *App) Start() {
 	defer a.app.HandlePanic()
