@@ -39,6 +39,23 @@ func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 
 	table.initBindings()
 
+	table.SetSelectedFunc(func(row, _ int) {
+		if row == 0 {
+			return
+		}
+		table.app.log.Info("Selected txn - row ", row)
+
+		cell := table.GetCell(row, 0)
+		ref := cell.GetReference()
+		txn, ok := ref.(*types.Transaction)
+		if !ok {
+			log.Fatal("reference was not a txn")
+		}
+		table.app.log.Info("Row reference txn hash: ", txn.Hash().String())
+		table.app.ShowTransactonData(txn)
+
+	})
+
 	go table.getTransactions()
 	return table
 }
@@ -94,6 +111,9 @@ func (t TransactionTable) setHeader() {
 }
 
 func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transaction) {
+	if txn == nil {
+		return
+	}
 
 	msg, err := txn.AsMessage(t.app.signer, t.block.BaseFee())
 	if err != nil {

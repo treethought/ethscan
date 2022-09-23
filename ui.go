@@ -72,16 +72,33 @@ func (app *App) initBlockFeed() *cview.Flex {
 
 }
 
+func (app *App) initTxnData() *cview.Flex {
+	app.log.Debug("initializing block feed layout")
+	txnData := NewTransactionData(app, nil)
+	app.views["txnData"] = txnData
+
+	wrap := cview.NewFlex()
+	wrap.SetBackgroundTransparent(false)
+	wrap.SetBackgroundColor(tcell.ColorDefault)
+	wrap.SetDirection(cview.FlexRow)
+	wrap.AddItem(txnData, 0, 1, true)
+
+	return wrap
+
+}
+
 func (app *App) initViews() {
 	app.log.Debug("initializing views")
 
 	blockFeed := app.initBlockFeed()
 	blockData := app.initBlockData()
+	txnData := app.initTxnData()
 
 	dataPanels := cview.NewTabbedPanels()
 	dataPanels.SetTitle("panels")
 	dataPanels.AddTab("blockFeed", "blocks", blockFeed)
 	dataPanels.AddTab("blockData", "block data", blockData)
+	dataPanels.AddTab("txnData", "txn", txnData)
 	dataPanels.SetCurrentTab("blockFeed")
 	dataPanels.SetBorder(false)
 	dataPanels.SetPadding(0, 0, 0, 0)
@@ -130,6 +147,27 @@ func (a *App) ShowBlocks() {
 	a.root.SetCurrentTab("blockFeed")
 }
 
+func (a *App) ShowTransactonData(txn *types.Transaction) {
+	a.log.Info("showing txn data for: ", txn.Hash().String())
+
+	// TODO: setup state to pull current tx from inside widget
+	// instead of calling SetTransaction
+	bd, ok := a.views["txnData"]
+	if !ok {
+		a.log.Error("txn view not set")
+		panic("txn view not set")
+	}
+	tdata, ok := bd.(*TransactionData)
+	if !ok {
+		a.log.Error("was not txn data")
+		panic("was not txn data")
+	}
+	a.log.Info("setting txn")
+
+	tdata.SetTransaction(txn)
+
+	a.root.SetCurrentTab("txnData")
+}
 func (a *App) Start() {
 	defer a.app.HandlePanic()
 	a.app.EnableMouse(true)

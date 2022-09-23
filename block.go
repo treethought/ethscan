@@ -63,7 +63,7 @@ func (d *BlockData) blockHeaders() *cview.Flex {
 	coinbase := truncate.Truncate(d.block.Coinbase().String(), 10, "...", truncate.PositionMiddle)
 	gasLimit := d.block.GasLimit()
 	gasUsed := d.block.GasUsed()
-	baseFee := weiToEther(d.block.BaseFee()).String()
+	baseFee := d.block.BaseFee().String()
 	root := truncate.Truncate(d.block.Root().String(), 10, "...", truncate.PositionMiddle)
 	extraData := string(d.block.Extra())
 

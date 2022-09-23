@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/aquilax/truncate"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -22,7 +21,7 @@ func formatAddress(client *ethclient.Client, addr common.Address) string {
 	if err == nil {
 		return name
 	}
-	return truncate.Truncate(addr.Hex(), truncSize, "...", truncate.PositionMiddle)
+    return addr.Hex()
 }
 
 func formatTime(t time.Time) string {
