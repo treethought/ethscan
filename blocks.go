@@ -14,7 +14,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-const truncSize = 8
+const truncSize = 12
 
 type blockRow struct {
 	header *types.Header
@@ -106,12 +106,10 @@ func NewBlockTable(app *App) *BlockTable {
 		"Time",
 		"Number",
 		"Hash",
-		"Parent",
 		"Miner",
 		"GasLimit",
 		"GasUsed",
 		"BaseFee",
-		"StateRoot",
 		"ExtraData",
 	}
 
@@ -193,13 +191,11 @@ func (t BlockTable) addHeaderRow(r blockRow) {
 	t.SetCell(row, 0, r.Time())
 	t.SetCell(row, 1, r.Number())
 	t.SetCell(row, 2, r.Hash())
-	t.SetCell(row, 3, r.Parent())
-	t.SetCell(row, 4, r.Miner())
-	t.SetCell(row, 5, r.GasLimit())
-	t.SetCell(row, 6, r.GasUsed())
-	t.SetCell(row, 7, r.BaseFee())
-	t.SetCell(row, 8, r.StateRoot())
-	t.SetCell(row, 9, r.ExtraData())
+	t.SetCell(row, 3, r.Miner())
+	t.SetCell(row, 4, r.GasLimit())
+	t.SetCell(row, 5, r.GasUsed())
+	t.SetCell(row, 6, r.BaseFee())
+	t.SetCell(row, 7, r.ExtraData())
 
 }
 
