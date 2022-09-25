@@ -8,8 +8,8 @@ require (
 	github.com/aquilax/truncate v1.0.0
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/gdamore/tcell/v2 v2.5.2
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/kataras/golog v0.1.7
-	github.com/shopspring/decimal v1.3.1
 	github.com/wealdtech/go-ens/v3 v3.5.5
 )
 

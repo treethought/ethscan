@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.rocketnine.space/tslocum/cview"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -12,8 +13,10 @@ import (
 type TransacionLogs struct {
 	*cview.TreeView
 	logs []*types.Log
+	txn  *types.Transaction
 	app  *App
 	db   *SignatureDB
+	abi  *abi.ABI
 }
 
 func NewTransactionLogs(app *App, logs []*types.Log) *TransacionLogs {
@@ -26,6 +29,9 @@ func NewTransactionLogs(app *App, logs []*types.Log) *TransacionLogs {
 }
 
 func (tl *TransacionLogs) Update() {
+	if tl.GetRoot() != nil {
+		tl.GetRoot().ClearChildren()
+	}
 	txn := tl.app.state.txn
 
 	tl.app.app.QueueUpdateDraw(func() {
@@ -34,7 +40,13 @@ func (tl *TransacionLogs) Update() {
 			tl.app.log.Error("failed to get txn receipt")
 			return
 		}
+		tl.txn = txn
 		tl.logs = rec.Logs
+		abi, err := GetContractABI(txn.To().String())
+		if err != nil {
+			tl.app.log.Errorf("failed to get contract abi: %s %s", txn.To().String(), err)
+		}
+		tl.abi = abi
 		tl.render()
 	})
 
@@ -44,6 +56,18 @@ func (tl *TransacionLogs) buildTopic(topic common.Hash, idx int, checkSig bool) 
 	if !checkSig {
 		return cview.NewTreeNode(fmt.Sprintf("%d: %s", idx, topic.Hex()))
 	}
+
+	// first get method from abi if we have it
+	if tl.abi != nil {
+		event, err := tl.abi.EventByID(topic)
+		if err != nil {
+			tl.app.log.Error("failed to get event from abi")
+		} else {
+			return cview.NewTreeNode(event.Sig)
+		}
+	}
+
+	// otherwise check for signature
 
 	// get first 4 bytes + 0x
 	prefix := topic.Hex()[:10]
@@ -61,14 +85,12 @@ func (tl *TransacionLogs) buildTopic(topic common.Hash, idx int, checkSig bool) 
 
 func (tl *TransacionLogs) render() {
 	tl.SetTitle("Logs")
-	if tl.GetRoot() != nil {
-		tl.GetRoot().ClearChildren()
-	}
 	tl.SetRoot(cview.NewTreeNode("Logs"))
 
 	if len(tl.logs) == 0 {
 		return
 	}
+
 	for _, l := range tl.logs {
 		addr := cview.NewTreeNode(fmt.Sprintf("Adress: %s", formatAddress(tl.app.client, l.Address)))
 
