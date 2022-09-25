@@ -52,6 +52,30 @@ func (tl *TransacionLogs) Update() {
 
 }
 
+func (tl *TransacionLogs) decodeLogData(log *types.Log) *cview.TreeNode {
+	if tl.abi == nil {
+		return nil
+	}
+
+	event, err := tl.abi.EventByID(log.Topics[0])
+	if err != nil {
+		tl.app.log.Error("failed to get log event")
+		return nil
+	}
+	output := make(map[string]interface{})
+	err = tl.abi.UnpackIntoMap(output, event.Name, log.Data)
+	if err != nil {
+		tl.app.log.Error("failed to get log event output")
+	}
+	n := cview.NewTreeNode("Data")
+	for k, v := range output {
+		txt := fmt.Sprintf("%s: %v", k, v)
+		n.AddChild(cview.NewTreeNode(txt))
+	}
+	return n
+
+}
+
 func (tl *TransacionLogs) buildTopic(topic common.Hash, idx int, checkSig bool) *cview.TreeNode {
 	if !checkSig {
 		return cview.NewTreeNode(fmt.Sprintf("%d: %s", idx, topic.Hex()))
@@ -103,8 +127,15 @@ func (tl *TransacionLogs) render() {
 				n = tl.buildTopic(t, i, false)
 			}
 			topics.AddChild(n)
+
 		}
 		addr.AddChild(topics)
+
+		data := tl.decodeLogData(l)
+		if data != nil {
+			addr.AddChild(data)
+		}
+
 		tl.GetRoot().AddChild(addr)
 	}
 
