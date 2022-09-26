@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -78,7 +79,8 @@ func (tl *TransacionLogs) decodeLogData(log *types.Log) *cview.TreeNode {
 
 func (tl *TransacionLogs) buildTopic(topic common.Hash, idx int, checkSig bool) *cview.TreeNode {
 	if !checkSig {
-		return cview.NewTreeNode(fmt.Sprintf("%d: %s", idx, topic.Hex()))
+		trimmed := hexStripZeros(topic.Hex())
+		return cview.NewTreeNode(fmt.Sprintf("%d: %s", idx, trimmed))
 	}
 
 	// first get method from abi if we have it
@@ -102,7 +104,7 @@ func (tl *TransacionLogs) buildTopic(topic common.Hash, idx int, checkSig bool) 
 		return cview.NewTreeNode(fmt.Sprintf("%d: %s", idx, topic.Hex()))
 
 	}
-	tl.app.log.Info("got signature for %s", prefix)
+	tl.app.log.Infof("got signature for %s", prefix)
 	return cview.NewTreeNode(sig.TextSignature)
 
 }

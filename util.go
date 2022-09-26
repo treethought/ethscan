@@ -16,6 +16,15 @@ import (
 	ens "github.com/wealdtech/go-ens/v3"
 )
 
+func hexStripZeros(hex string) string {
+	trimmed := strings.TrimPrefix(hex, "0x")
+	trimmed = strings.TrimLeft(trimmed, "0")
+	if len(trimmed) < 2 {
+		trimmed = fmt.Sprintf("0%s", trimmed)
+	}
+	return fmt.Sprintf("0x%s", trimmed)
+}
+
 func formatAddress(client *ethclient.Client, addr common.Address) string {
 	name, err := ens.ReverseResolve(client, addr)
 	if err == nil {
