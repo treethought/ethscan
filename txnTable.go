@@ -133,16 +133,28 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		log.Fatal(err)
 	}
 
-	method := "unknown"
-	if len(txn.Data()) >= 4 {
+	var method string
+	var toField string
+
+	// contract deployment
+	if txn.To() == nil {
+		method = "[red]ContractDeployment[red]"
+		toField = ""
+	} else if len(txn.Data()) >= 4 {
+		toField = txn.To().Hex()
+		// contract execution
 		method = common.Bytes2Hex(txn.Data()[:4])
 		go func() {
-			abi, err := GetContractABI(txn.To().String())
+			abi, err := GetContractABI(toField)
 			if err != nil {
 				t.app.log.Errorf("failed to get abi: ", err)
 			}
 			t.abiChan <- abiMsg{abi: abi, txn: txn, row: row}
 		}()
+	} else {
+		toField = txn.To().Hex()
+		// basic eth transfer
+		method = fmt.Sprintf("[yellow]Transfer[yellow]")
 	}
 
 	blockTime := time.Unix(int64(t.block.Time()), 0)
@@ -161,11 +173,10 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		t.SetCell(row, 0, hashRefCell)
 
 		methodCell := cview.NewTableCell(method)
-		methodCell.SetMaxWidth(12)
 		t.SetCell(row, 1, methodCell)
 		t.SetCell(row, 2, cview.NewTableCell(age.String()))
 		t.SetCell(row, 3, cview.NewTableCell(msg.From().Hex()))
-		t.SetCell(row, 4, cview.NewTableCell(txn.To().Hex()))
+		t.SetCell(row, 4, cview.NewTableCell(toField))
 		t.SetCell(row, 5, cview.NewTableCell(weiToEther(txn.Value()).String()))
 		fee := getFee(receipt, txn, t.block.BaseFee())
 		t.SetCell(row, 6, cview.NewTableCell(weiToEther(fee).String()))
