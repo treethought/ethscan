@@ -128,6 +128,22 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		t.app.log.Error("failed to get txn as message: ", err)
 	}
 
+	go func() {
+		from := formatAddress(t.app.client, msg.From())
+		var to string
+		if txn.To() == nil {
+			to = ""
+		} else {
+			to = formatAddress(t.app.client, *txn.To())
+		}
+		t.app.app.QueueUpdateDraw(func() {
+			fromCell := t.GetCell(row, 3)
+			fromCell.SetText(from)
+			toCell := t.GetCell(row, 4)
+			toCell.SetText(to)
+		})
+	}()
+
 	receipt, err := t.app.client.TransactionReceipt(ctx, txn.Hash())
 	if err != nil {
 		log.Fatal(err)
@@ -166,6 +182,8 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 	if receipt.Status != 1 {
 		statusText = "failed"
 	}
+
+	// to may be nil if is contract deployment
 
 	t.app.app.QueueUpdateDraw(func() {
 		hashRefCell := cview.NewTableCell(hash)

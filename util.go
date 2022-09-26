@@ -35,6 +35,11 @@ var commonAddresses = map[string]string{
 	"0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch v4: Router",
 	"0x46340b20830761efd32832a74d7169b29feb9758": "Crypto.com 2",
 	"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": "Centre: USD Coin",
+	"0xb5d85cbf7cb3ee0d56b3bb207d5fc4b82f43f511": "Coinbase 5",
+	"0x3cd751e6b0078be393132286c442345e5dc49699": "Coinbase 4",
+	"0xfd54078badd5653571726c3370afb127351a6f26": "Huobi 30",
+	"0x4103c267fba03a1df4fe84bc28092d629fa3f422": "Umbria: Narni Bridge",
+	"0xc098b2a3aa256d2140208c3de6543aaef5cd3a94": "FTX Exchange 2",
 }
 
 func hexStripZeros(hex string) string {

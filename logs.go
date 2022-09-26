@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -33,6 +32,7 @@ func (tl *TransacionLogs) Update() {
 	if tl.GetRoot() != nil {
 		tl.GetRoot().ClearChildren()
 	}
+	tl.SetRoot(cview.NewTreeNode("Loading logs..."))
 	txn := tl.app.state.txn
 
 	tl.app.app.QueueUpdateDraw(func() {
