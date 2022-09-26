@@ -55,3 +55,19 @@ func GetContractABI(contractAddress string) (*abi.ABI, error) {
 	}
 	return &contractABI, nil
 }
+
+// refer
+// https://github.com/ethereum/web3.py/blob/master/web3/contract.py#L435
+func DecodeTransactionInputData(contractABI *abi.ABI, data []byte) (mehtod string, inputs map[string]interface{}, err error) {
+	methodSigData := data[:4]
+	inputsSigData := data[4:]
+	method, err := contractABI.MethodById(methodSigData)
+	if err != nil {
+		return "", nil, err
+	}
+	inputsMap := make(map[string]interface{})
+	if err := method.Inputs.UnpackIntoMap(inputsMap, inputsSigData); err != nil {
+		return "", nil, err
+	}
+	return method.Name, inputsMap, nil
+}

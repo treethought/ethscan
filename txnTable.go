@@ -9,10 +9,17 @@ import (
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/aquilax/truncate"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gdamore/tcell/v2"
 )
+
+type abiMsg struct {
+	txn *types.Transaction
+	abi *abi.ABI
+	row int
+}
 
 type TransactionTable struct {
 	*cview.Table
@@ -21,16 +28,16 @@ type TransactionTable struct {
 	block    *types.Block
 	bindings *cbind.Configuration
 
-	ch chan *types.Transaction
+	abiChan chan abiMsg
 }
 
 func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 	table := &TransactionTable{
-		Table: cview.NewTable(),
-		txs:   nil,
-		ch:    make(chan *types.Transaction),
-		app:   app,
-		block: block,
+		Table:   cview.NewTable(),
+		txs:     nil,
+		abiChan: make(chan abiMsg),
+		app:     app,
+		block:   block,
 	}
 	table.SetBorder(true)
 
@@ -39,6 +46,7 @@ func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 
 	table.initBindings()
 
+	go table.handleAbis(context.TODO())
 	table.SetSelectedFunc(func(row, _ int) {
 		if row == 0 {
 			return
@@ -99,7 +107,7 @@ func (t *TransactionTable) getTransactions() {
 
 func (t TransactionTable) setHeader() {
 	t.SetCell(0, 0, cview.NewTableCell("Txn Hash"))
-	t.SetCell(0, 1, cview.NewTableCell("Block"))
+	t.SetCell(0, 1, cview.NewTableCell("Method"))
 	t.SetCell(0, 2, cview.NewTableCell("Age"))
 	t.SetCell(0, 3, cview.NewTableCell("From"))
 	t.SetCell(0, 4, cview.NewTableCell("To"))
@@ -125,6 +133,18 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		log.Fatal(err)
 	}
 
+	method := "unknown"
+	if len(txn.Data()) >= 4 {
+		method = common.Bytes2Hex(txn.Data()[:4])
+		go func() {
+			abi, err := GetContractABI(txn.To().String())
+			if err != nil {
+				t.app.log.Errorf("failed to get abi: ", err)
+			}
+			t.abiChan <- abiMsg{abi: abi, txn: txn, row: row}
+		}()
+	}
+
 	blockTime := time.Unix(int64(t.block.Time()), 0)
 	age := time.Since(blockTime).Truncate(time.Second)
 
@@ -139,7 +159,10 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		hashRefCell := cview.NewTableCell(hash)
 		hashRefCell.SetReference(txn)
 		t.SetCell(row, 0, hashRefCell)
-		t.SetCell(row, 1, cview.NewTableCell(receipt.BlockNumber.String()))
+
+		methodCell := cview.NewTableCell(method)
+		methodCell.SetMaxWidth(12)
+		t.SetCell(row, 1, methodCell)
 		t.SetCell(row, 2, cview.NewTableCell(age.String()))
 		t.SetCell(row, 3, cview.NewTableCell(msg.From().Hex()))
 		t.SetCell(row, 4, cview.NewTableCell(txn.To().Hex()))
@@ -152,7 +175,7 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 	// go t.resolveAddresses(row)
 }
 
-func (t TransactionTable) resolveAddresses(row int) {
+func (t *TransactionTable) resolveAddresses(row int) {
 	t.app.log.Info("resolving row: ", row)
 	from := t.GetCell(row, 3)
 	to := t.GetCell(row, 4)
@@ -160,4 +183,30 @@ func (t TransactionTable) resolveAddresses(row int) {
 		from.SetText(formatAddress(t.app.client, common.HexToAddress(from.GetText())))
 		to.SetText(formatAddress(t.app.client, common.HexToAddress(to.GetText())))
 	})
+}
+func (t *TransactionTable) setMethod(m abiMsg) {
+	if m.abi == nil || len(m.txn.Data()) == 0 {
+		return
+	}
+	method, _, err := DecodeTransactionInputData(m.abi, m.txn.Data())
+	if err != nil {
+		t.app.log.Error("failed to decode txn input data: ", err)
+	}
+
+	cell := t.GetCell(m.row, 1)
+	cell.SetText(fmt.Sprintf("[blue]%s[blue]", method))
+
+}
+
+func (t *TransactionTable) handleAbis(ctx context.Context) {
+	for {
+		select {
+		case m := <-t.abiChan:
+			t.app.log.Infof("received abi for addr: %s", m.txn.To().String())
+			t.setMethod(m)
+		case <-ctx.Done():
+			return
+
+		}
+	}
 }

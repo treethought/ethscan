@@ -21,7 +21,7 @@ func formatAddress(client *ethclient.Client, addr common.Address) string {
 	if err == nil {
 		return name
 	}
-    return addr.Hex()
+	return addr.Hex()
 }
 
 func formatTime(t time.Time) string {
