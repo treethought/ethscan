@@ -2,24 +2,24 @@ package main
 
 import (
 	"context"
-	"math/big"
+	"fmt"
 
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-
 type TransactionData struct {
-	*cview.List
+	*cview.Grid
 	app      *App
 	bindings *cbind.Configuration
 	txn      *types.Transaction
+	block    *types.Block
 }
 
 func NewTransactionData(app *App, txn *types.Transaction) *TransactionData {
 	d := &TransactionData{
-		List: cview.NewList(),
+		Grid: cview.NewGrid(),
 		app:  app,
 		txn:  txn,
 	}
@@ -29,6 +29,7 @@ func NewTransactionData(app *App, txn *types.Transaction) *TransactionData {
 
 func (d *TransactionData) Update() {
 	txn := d.app.state.txn
+	d.block = d.app.state.block
 	d.SetTransaction(txn)
 }
 
@@ -54,34 +55,124 @@ func (d *TransactionData) render() {
 		d.app.log.Error("failed to get txn receipt: ", err)
 	}
 
-	// TODO: get base fee
-	msg, err := d.txn.AsMessage(d.app.signer, big.NewInt(0))
+	msg, err := d.txn.AsMessage(d.app.signer, d.block.BaseFee())
 	if err != nil {
 		d.app.log.Error("failed to get txn as message: ", err)
 	}
 
+	meta := cview.NewList()
+	meta.SetTitle("meta")
+	meta.SetBorder(true)
+
 	hash := cview.NewListItem("Hash")
 	hash.SetSecondaryText(d.txn.Hash().Hex())
-	d.AddItem(hash)
+	meta.AddItem(hash)
 
 	status := cview.NewListItem("Status")
 	statusText := "Success"
 	if rec.Status != 1 {
-		statusText = "Failed"
+		statusText = "[red]Failed[red]"
 	}
 	status.SetSecondaryText(statusText)
-	d.AddItem(status)
+	meta.AddItem(status)
 
 	block := cview.NewListItem("Block")
 	block.SetSecondaryText(rec.BlockNumber.String())
-	d.AddItem(block)
+	meta.AddItem(block)
+
+	info := cview.NewList()
+	info.SetTitle("info")
+	info.SetBorder(true)
 
 	from := cview.NewListItem("From")
 	from.SetSecondaryText(formatAddress(d.app.client, msg.From()))
-	d.AddItem(from)
+	info.AddItem(from)
 
-	to := cview.NewListItem("To")
+	var to *cview.ListItem
+	// contact
+	if len(d.txn.Data()) > 0 {
+		to = cview.NewListItem("Interacted With (To)")
+	} else {
+		to = cview.NewListItem("To")
+	}
 	to.SetSecondaryText(formatAddress(d.app.client, *msg.To()))
-	d.AddItem(to)
+	info.AddItem(to)
+
+	value := cview.NewListItem("Value")
+	val := weiToEther(d.txn.Value())
+	valText := fmt.Sprintf("%s ETH", val.String())
+	value.SetSecondaryText(valText)
+	info.AddItem(value)
+
+	fee := cview.NewListItem("Transaction Fee")
+	feeWei := getFee(rec, d.txn, d.block.BaseFee())
+	feeStr := fmt.Sprintf("%s ETH", weiToEther(feeWei).String())
+
+	fee.SetSecondaryText(feeStr)
+	info.AddItem(fee)
+
+	gas := cview.NewList()
+	gas.SetTitle("Gas")
+	gas.SetBorder(true)
+
+	gasPrice := cview.NewListItem("Gas Price (Gwei)")
+	gasPrice.SetSecondaryText(weiToGwei(msg.GasPrice()).String())
+	gas.AddItem(gasPrice)
+
+	gasLimit := cview.NewListItem("Gas Limit")
+	gasLimit.SetSecondaryText(fmt.Sprint(msg.Gas()))
+	gas.AddItem(gasLimit)
+
+	pctUsed := float64(rec.GasUsed) / float64(msg.Gas()) * float64(100)
+	gasUsed := cview.NewListItem("Gas Used")
+	gasUsed.SetSecondaryText(fmt.Sprintf("%d (%.2f)%%", rec.GasUsed, pctUsed))
+	gas.AddItem(gasUsed)
+
+	gasFees := cview.NewListItem("Gas Fees (Gwei)")
+	gasFeeTxt := fmt.Sprintf("Base: %.2f | Max: %.2f | Max Priority: %.2f",
+		weiToGwei(d.block.BaseFee()), weiToGwei(msg.GasFeeCap()), weiToGwei(msg.GasTipCap()))
+
+	gasFees.SetSecondaryText(gasFeeTxt)
+	gas.AddItem(gasFees)
+
+	other := cview.NewList()
+	other.SetTitle("other")
+	other.SetBorder(true)
+
+	txnType := cview.NewListItem("Txn Type")
+	var txnTypeTxt string
+	switch d.txn.Type() {
+	case 0:
+		txnTypeTxt = "0 (Legacy)"
+	case 1:
+		txnTypeTxt = "1 (Contract Deployment)"
+	case 2:
+		txnTypeTxt = "2 (EIP-1559)"
+	}
+	txnType.SetSecondaryText(txnTypeTxt)
+
+	nonce := cview.NewListItem("Nonce")
+	nonce.SetSecondaryText(fmt.Sprint(d.txn.Nonce()))
+
+	pos := cview.NewListItem("Position")
+	pos.SetSecondaryText(fmt.Sprint(rec.TransactionIndex))
+
+	other.AddItem(txnType)
+	other.AddItem(nonce)
+	other.AddItem(pos)
+
+	data := cview.NewTextView()
+	data.SetTitle("Input Data")
+	data.SetBorder(true)
+
+	data.SetText(string(rec.PostState))
+
+	d.SetRows(0, 0)
+	d.SetColumns(0, 0, 0, 0)
+
+	d.AddItem(meta, 0, 0, 1, 2, 0, 0, false)
+	d.AddItem(info, 0, 2, 1, 2, 0, 0, false)
+	d.AddItem(gas, 1, 0, 1, 2, 0, 0, false)
+	d.AddItem(other, 1, 2, 1, 2, 0, 0, false)
 
 }

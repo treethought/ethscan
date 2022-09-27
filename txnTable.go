@@ -180,10 +180,8 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 
 	statusText := "success"
 	if receipt.Status != 1 {
-		statusText = "failed"
+		statusText = "[red]failed[red]"
 	}
-
-	// to may be nil if is contract deployment
 
 	t.app.app.QueueUpdateDraw(func() {
 		hashRefCell := cview.NewTableCell(hash)
