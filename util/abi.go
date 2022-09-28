@@ -1,14 +1,15 @@
-package main
+package util
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/go-resty/resty/v2"
 )
 
-const etherscanAPIKey = "5MRAC2D8SSIQDN9QCTY9PTFVNPUAGB8PEN"
+var etherscanAPIKey = os.Getenv("EHTERSCAN_API_KEY")
 
 // taken from https://gist.github.com/crazygit/9279a3b26461d7cb03e807a6362ec855
 type RawABIResponse struct {

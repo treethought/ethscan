@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/aquilax/truncate"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gdamore/tcell/v2"
+	"github.com/treethought/ethscan/util"
 )
 
 const truncSize = 12
@@ -25,7 +26,7 @@ func newBlockRow(h *types.Header) blockRow {
 }
 
 func (r blockRow) Time() *cview.TableCell {
-	human := formatUnixTime(r.header.Time)
+	human := util.FormatUnixTime(r.header.Time)
 	return cview.NewTableCell(human)
 }
 
@@ -174,7 +175,7 @@ func (t *BlockTable) handleOpen(ev *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	url := fmt.Sprintf("https://etherscan.io/block/%s", curNum.String())
-	openbrowser(url)
+	util.Openbrowser(url)
 	return nil
 
 }

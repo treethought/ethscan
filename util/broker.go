@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"context"
@@ -73,7 +73,7 @@ func (b *Broker) pubTxn(t *types.Transaction) {
 	}
 }
 
-func (b *Broker) listenForBlocks(ctx context.Context) {
+func (b *Broker) ListenForBlocks(ctx context.Context) {
 
 	hChan := make(chan *types.Header)
 
@@ -86,7 +86,7 @@ func (b *Broker) listenForBlocks(ctx context.Context) {
 		select {
 		case err := <-sub.Err():
 			fmt.Println(err)
-			b.listenForBlocks(ctx)
+			b.ListenForBlocks(ctx)
 			return
 		case h := <-hChan:
 			b.pubHeader(h)

@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"context"
@@ -13,12 +13,19 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gdamore/tcell/v2"
+	"github.com/treethought/ethscan/util"
 )
 
 type abiMsg struct {
 	txn *types.Transaction
 	abi *abi.ABI
 	row int
+}
+
+type ensMsg struct {
+	row  int
+	addr *common.Address
+	ens  string
 }
 
 type TransactionTable struct {
@@ -29,6 +36,7 @@ type TransactionTable struct {
 	bindings *cbind.Configuration
 
 	abiChan chan abiMsg
+	ensChan chan ensMsg
 }
 
 func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
@@ -90,7 +98,7 @@ func (t *TransactionTable) getCurrentRef() *types.Transaction {
 func (t *TransactionTable) handleOpen(ev *tcell.EventKey) *tcell.EventKey {
 	cur := t.getCurrentRef()
 	url := fmt.Sprintf("https://etherscan.io/tx/%s", cur.Hash().Hex())
-	openbrowser(url)
+	util.Openbrowser(url)
 	return nil
 
 }
@@ -106,6 +114,7 @@ func (t *TransactionTable) getTransactions() {
 }
 
 func (t TransactionTable) setHeader() {
+	// w, _ := t.app.app.GetScreen().Size()
 	t.SetCell(0, 0, cview.NewTableCell("Txn Hash"))
 	t.SetCell(0, 1, cview.NewTableCell("Method"))
 	t.SetCell(0, 2, cview.NewTableCell("Age"))
@@ -116,6 +125,7 @@ func (t TransactionTable) setHeader() {
 	t.SetCell(0, 7, cview.NewTableCell("Logs"))
 	t.SetCell(0, 8, cview.NewTableCell("Status"))
 	t.SetFixed(1, 0)
+
 }
 
 func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transaction) {
@@ -129,12 +139,12 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 	}
 
 	go func() {
-		from := formatAddress(t.app.client, msg.From())
+		from := util.FormatAddress(t.app.client, msg.From())
 		var to string
 		if txn.To() == nil {
 			to = ""
 		} else {
-			to = formatAddress(t.app.client, *txn.To())
+			to = util.FormatAddress(t.app.client, *txn.To())
 		}
 		t.app.app.QueueUpdateDraw(func() {
 			fromCell := t.GetCell(row, 3)
@@ -161,7 +171,7 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		// contract execution
 		method = common.Bytes2Hex(txn.Data()[:4])
 		go func() {
-			abi, err := GetContractABI(toField)
+			abi, err := util.GetContractABI(toField)
 			if err != nil {
 				t.app.log.Error("failed to get abi: ", err)
 			}
@@ -193,9 +203,9 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		t.SetCell(row, 2, cview.NewTableCell(age.String()))
 		t.SetCell(row, 3, cview.NewTableCell(msg.From().Hex()))
 		t.SetCell(row, 4, cview.NewTableCell(toField))
-		t.SetCell(row, 5, cview.NewTableCell(weiToEther(txn.Value()).String()))
-		fee := getFee(receipt, txn, t.block.BaseFee())
-		t.SetCell(row, 6, cview.NewTableCell(weiToEther(fee).String()))
+		t.SetCell(row, 5, cview.NewTableCell(util.WeiToEther(txn.Value()).String()))
+		fee := util.GetFee(receipt, txn, t.block.BaseFee())
+		t.SetCell(row, 6, cview.NewTableCell(util.WeiToEther(fee).String()))
 		t.SetCell(row, 7, cview.NewTableCell(fmt.Sprint(len(receipt.Logs))))
 		t.SetCell(row, 8, cview.NewTableCell(statusText))
 	})
@@ -207,15 +217,15 @@ func (t *TransactionTable) resolveAddresses(row int) {
 	from := t.GetCell(row, 3)
 	to := t.GetCell(row, 4)
 	t.app.app.QueueUpdateDraw(func() {
-		from.SetText(formatAddress(t.app.client, common.HexToAddress(from.GetText())))
-		to.SetText(formatAddress(t.app.client, common.HexToAddress(to.GetText())))
+		from.SetText(util.FormatAddress(t.app.client, common.HexToAddress(from.GetText())))
+		to.SetText(util.FormatAddress(t.app.client, common.HexToAddress(to.GetText())))
 	})
 }
 func (t *TransactionTable) setMethod(m abiMsg) {
 	if m.abi == nil || len(m.txn.Data()) == 0 {
 		return
 	}
-	method, _, err := DecodeTransactionInputData(m.abi, m.txn.Data())
+	method, _, err := util.DecodeTransactionInputData(m.abi, m.txn.Data())
 	if err != nil {
 		t.app.log.Error("failed to decode txn input data: ", err)
 	}

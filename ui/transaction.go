@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/treethought/ethscan/util"
 )
 
 type TransactionData struct {
@@ -85,7 +86,7 @@ func (d *TransactionData) render() {
 	info.SetBorder(true)
 
 	from := cview.NewListItem("From")
-	from.SetSecondaryText(formatAddress(d.app.client, msg.From()))
+	from.SetSecondaryText(util.FormatAddress(d.app.client, msg.From()))
 	info.AddItem(from)
 
 	var to *cview.ListItem
@@ -96,21 +97,21 @@ func (d *TransactionData) render() {
 		to = cview.NewListItem("To")
 	}
 	if msg.To() != nil {
-		to.SetSecondaryText(formatAddress(d.app.client, *msg.To()))
+		to.SetSecondaryText(util.FormatAddress(d.app.client, *msg.To()))
 	} else {
 		to.SetSecondaryText("none")
 	}
 	info.AddItem(to)
 
 	value := cview.NewListItem("Value")
-	val := weiToEther(d.txn.Value())
+	val := util.WeiToEther(d.txn.Value())
 	valText := fmt.Sprintf("%s ETH", val.String())
 	value.SetSecondaryText(valText)
 	info.AddItem(value)
 
 	fee := cview.NewListItem("Transaction Fee")
-	feeWei := getFee(rec, d.txn, d.block.BaseFee())
-	feeStr := fmt.Sprintf("%s ETH", weiToEther(feeWei).String())
+	feeWei := util.GetFee(rec, d.txn, d.block.BaseFee())
+	feeStr := fmt.Sprintf("%s ETH", util.WeiToEther(feeWei).String())
 
 	fee.SetSecondaryText(feeStr)
 	info.AddItem(fee)
@@ -120,7 +121,7 @@ func (d *TransactionData) render() {
 	gas.SetBorder(true)
 
 	gasPrice := cview.NewListItem("Gas Price (Gwei)")
-	gasPrice.SetSecondaryText(weiToGwei(msg.GasPrice()).String())
+	gasPrice.SetSecondaryText(util.WeiToGwei(msg.GasPrice()).String())
 	gas.AddItem(gasPrice)
 
 	gasLimit := cview.NewListItem("Gas Limit")
@@ -134,7 +135,9 @@ func (d *TransactionData) render() {
 
 	gasFees := cview.NewListItem("Gas Fees (Gwei)")
 	gasFeeTxt := fmt.Sprintf("Base: %.2f | Max: %.2f | Max Priority: %.2f",
-		weiToGwei(d.block.BaseFee()), weiToGwei(msg.GasFeeCap()), weiToGwei(msg.GasTipCap()))
+		util.WeiToGwei(d.block.BaseFee()),
+		util.WeiToGwei(msg.GasFeeCap()),
+		util.WeiToGwei(msg.GasTipCap()))
 
 	gasFees.SetSecondaryText(gasFeeTxt)
 	gas.AddItem(gasFees)

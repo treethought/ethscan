@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/treethought/ethscan/util"
 )
 
 type TransacionLogs struct {
@@ -15,7 +16,7 @@ type TransacionLogs struct {
 	logs []*types.Log
 	txn  *types.Transaction
 	app  *App
-	db   *SignatureDB
+	db   *util.SignatureDB
 	abi  *abi.ABI
 }
 
@@ -24,7 +25,7 @@ func NewTransactionLogs(app *App, logs []*types.Log) *TransacionLogs {
 		TreeView: cview.NewTreeView(),
 		logs:     logs,
 		app:      app,
-		db:       NewSignatureDB(),
+		db:       util.NewSignatureDB(),
 	}
 }
 
@@ -42,7 +43,7 @@ func (tl *TransacionLogs) Update() {
 	}
 	tl.txn = txn
 	tl.logs = rec.Logs
-	abi, err := GetContractABI(txn.To().String())
+	abi, err := util.GetContractABI(txn.To().String())
 	if err != nil {
 		tl.app.log.Errorf("failed to get contract abi: %s %s", txn.To().String(), err)
 	}
@@ -79,7 +80,7 @@ func (tl *TransacionLogs) decodeLogData(log *types.Log) *cview.TreeNode {
 
 func (tl *TransacionLogs) buildTopic(topic common.Hash, idx int, checkSig bool) *cview.TreeNode {
 	if !checkSig {
-		trimmed := hexStripZeros(topic.Hex())
+		trimmed := util.HexStripZeros(topic.Hex())
 		return cview.NewTreeNode(fmt.Sprintf("%d: %s", idx, trimmed))
 	}
 
@@ -119,7 +120,7 @@ func (tl *TransacionLogs) render() {
 	}
 
 	for _, l := range tl.logs {
-		addr := cview.NewTreeNode(fmt.Sprintf("Adress: %s", formatAddress(tl.app.client, l.Address)))
+		addr := cview.NewTreeNode(fmt.Sprintf("Adress: %s", util.FormatAddress(tl.app.client, l.Address)))
 
 		topics := cview.NewTreeNode("Topics")
 		for i, t := range l.Topics {

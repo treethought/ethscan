@@ -36,7 +36,7 @@ require (
 	github.com/multiformats/go-varint v0.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.3.1 // indirect
-	github.com/rjeczalik/notify v0.9.1 // indirect
+	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect

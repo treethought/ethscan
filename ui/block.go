@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"github.com/aquilax/truncate"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gdamore/tcell/v2"
+	"github.com/treethought/ethscan/util"
 )
 
 type BlockData struct {
@@ -65,7 +66,7 @@ func (d *BlockData) blockHeaders() *cview.Flex {
 
 	number := d.block.Number().String()
 	hash := truncate.Truncate(d.block.Hash().String(), 10, "...", truncate.PositionMiddle)
-	time := formatUnixTime(d.block.Time())
+	time := util.FormatUnixTime(d.block.Time())
 	parent := truncate.Truncate(d.block.ParentHash().String(), 20, "...", truncate.PositionMiddle)
 	coinbase := truncate.Truncate(d.block.Coinbase().String(), 10, "...", truncate.PositionMiddle)
 	gasLimit := d.block.GasLimit()
@@ -100,6 +101,7 @@ func (d *BlockData) render() {
 	}
 
 	d.SetTitle(fmt.Sprintf("Block #%d", d.block.Number()))
+	// d.SetBorder(true)
 	d.SetRows(0, 0, 0)
 	d.SetColumns(-1, -3, 0)
 

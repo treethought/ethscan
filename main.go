@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/treethought/ethscan/ui"
 )
 
 func main() {
@@ -13,7 +14,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	app := NewApp(client)
+	app := ui.NewApp(client)
 	app.Start()
 
 }

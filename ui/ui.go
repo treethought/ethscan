@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kataras/golog"
+	"github.com/treethought/ethscan/util"
 )
 
 type State struct {
@@ -66,7 +67,7 @@ type App struct {
 	root     *cview.TabbedPanels
 	focus    *cview.FocusManager
 	bindings *cbind.Configuration
-	broker   *Broker
+	broker   *util.Broker
 	views    map[string]View
 	log      *golog.Logger
 	signer   types.Signer
@@ -86,10 +87,10 @@ func NewApp(client *ethclient.Client) *App {
 		app:      cview.NewApplication(),
 		focus:    nil,
 		bindings: cbind.NewConfiguration(),
-		broker:   NewBroker(client),
+		broker:   util.NewBroker(client),
 		views:    make(map[string]View),
 		log:      log,
-		signer:   getSigner(context.TODO(), client),
+		signer:   util.GetSigner(context.TODO(), client),
 		state:    &State{},
 	}
 }
@@ -219,7 +220,7 @@ func (a *App) Start() {
 	a.setBindings()
 	a.initViews()
 
-	go a.broker.listenForBlocks(context.TODO())
+	go a.broker.ListenForBlocks(context.TODO())
 
 	a.app.SetRoot(a.root, true)
 
