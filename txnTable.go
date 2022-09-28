@@ -40,6 +40,7 @@ func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 		block:   block,
 	}
 	table.SetBorder(true)
+	table.SetTitle("Transactions")
 
 	table.setHeader()
 	table.SetSelectable(true, false)
@@ -47,18 +48,18 @@ func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 	table.initBindings()
 
 	go table.handleAbis(context.TODO())
+
 	table.SetSelectedFunc(func(row, _ int) {
 		if row == 0 {
 			return
 		}
-		table.app.log.Info("Selected txn - row ", row)
 
 		txn := table.getCurrentRef()
 		if txn == nil {
 			log.Fatal("reference was not a txn")
 		}
 
-		table.app.log.Info("Row reference txn hash: ", txn.Hash().String())
+		table.app.log.Debug("Row reference txn hash: ", txn.Hash().String())
 		table.app.state.SetBlock(block)
 		table.app.state.SetTxn(txn)
 		table.app.ShowTransactonData(txn)
@@ -98,7 +99,6 @@ func (t *TransactionTable) getTransactions() {
 	if t.block == nil {
 		return
 	}
-	t.app.log.Info("iterating txns: ", len(t.block.Transactions()))
 	for i, txn := range t.block.Transactions() {
 		t.addTxn(context.TODO(), i+1, txn)
 	}
@@ -163,7 +163,7 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		go func() {
 			abi, err := GetContractABI(toField)
 			if err != nil {
-				t.app.log.Errorf("failed to get abi: ", err)
+				t.app.log.Error("failed to get abi: ", err)
 			}
 			t.abiChan <- abiMsg{abi: abi, txn: txn, row: row}
 		}()
@@ -229,7 +229,7 @@ func (t *TransactionTable) handleAbis(ctx context.Context) {
 	for {
 		select {
 		case m := <-t.abiChan:
-			t.app.log.Infof("received abi for addr: %s", m.txn.To().String())
+			t.app.log.Debug("received abi for addr: %s", m.txn.To().String())
 			t.setMethod(m)
 		case <-ctx.Done():
 			return

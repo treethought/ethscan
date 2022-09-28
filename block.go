@@ -19,8 +19,6 @@ type BlockData struct {
 
 func NewBlockData(app *App, block *types.Block) *BlockData {
 	bd := &BlockData{app: app, block: block, Grid: cview.NewGrid()}
-	bd.SetBackgroundColor(tcell.ColorPink)
-	bd.SetBordersColor(tcell.ColorBlue)
 
 	bd.setBindings()
 	bd.render()
@@ -58,12 +56,17 @@ func (d *BlockData) blockHeaders() *cview.Flex {
 	f.SetDirection(cview.FlexColumn)
 
 	basic := cview.NewList()
+	basic.SetTitle("basic")
+	basic.SetBorder(true)
+
 	details := cview.NewList()
+	details.SetTitle("details")
+	details.SetBorder(true)
 
 	number := d.block.Number().String()
 	hash := truncate.Truncate(d.block.Hash().String(), 10, "...", truncate.PositionMiddle)
 	time := formatUnixTime(d.block.Time())
-	parent := d.block.ParentHash().String()
+	parent := truncate.Truncate(d.block.ParentHash().String(), 20, "...", truncate.PositionMiddle)
 	coinbase := truncate.Truncate(d.block.Coinbase().String(), 10, "...", truncate.PositionMiddle)
 	gasLimit := d.block.GasLimit()
 	gasUsed := d.block.GasUsed()
@@ -75,6 +78,7 @@ func (d *BlockData) blockHeaders() *cview.Flex {
 	basic.AddItem(cview.NewListItem(fmt.Sprintf("Hash: %s", hash)))
 	basic.AddItem(cview.NewListItem(fmt.Sprintf("Time: %s", time)))
 	basic.AddItem(cview.NewListItem(fmt.Sprintf("Parent: %s", parent)))
+
 	details.AddItem(cview.NewListItem(fmt.Sprintf("Coinbase (Proposer): %s", coinbase)))
 	details.AddItem(cview.NewListItem(fmt.Sprintf("GasLimit: %d", gasLimit)))
 	details.AddItem(cview.NewListItem(fmt.Sprintf("GasUsed: %d", gasUsed)))
@@ -95,10 +99,9 @@ func (d *BlockData) render() {
 		return
 	}
 
-	d.SetBorders(true)
+	d.SetTitle(fmt.Sprintf("Block #%d", d.block.Number()))
 	d.SetRows(0, 0, 0)
 	d.SetColumns(-1, -3, 0)
-	d.SetBorders(true)
 
 	d.AddItem(d.blockHeaders(), 0, 0, 1, 3, 0, 0, false)
 

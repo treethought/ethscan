@@ -35,19 +35,19 @@ func (tl *TransacionLogs) Update() {
 	tl.SetRoot(cview.NewTreeNode("Loading logs..."))
 	txn := tl.app.state.txn
 
+	rec, err := tl.app.client.TransactionReceipt(context.TODO(), txn.Hash())
+	if err != nil {
+		tl.app.log.Error("failed to get txn receipt")
+		return
+	}
+	tl.txn = txn
+	tl.logs = rec.Logs
+	abi, err := GetContractABI(txn.To().String())
+	if err != nil {
+		tl.app.log.Errorf("failed to get contract abi: %s %s", txn.To().String(), err)
+	}
+	tl.abi = abi
 	tl.app.app.QueueUpdateDraw(func() {
-		rec, err := tl.app.client.TransactionReceipt(context.TODO(), txn.Hash())
-		if err != nil {
-			tl.app.log.Error("failed to get txn receipt")
-			return
-		}
-		tl.txn = txn
-		tl.logs = rec.Logs
-		abi, err := GetContractABI(txn.To().String())
-		if err != nil {
-			tl.app.log.Errorf("failed to get contract abi: %s %s", txn.To().String(), err)
-		}
-		tl.abi = abi
 		tl.render()
 	})
 
@@ -104,14 +104,15 @@ func (tl *TransacionLogs) buildTopic(topic common.Hash, idx int, checkSig bool) 
 		return cview.NewTreeNode(fmt.Sprintf("%d: %s", idx, topic.Hex()))
 
 	}
-	tl.app.log.Infof("got signature for %s", prefix)
+	tl.app.log.Debug("got signature for %s", prefix)
 	return cview.NewTreeNode(sig.TextSignature)
 
 }
 
 func (tl *TransacionLogs) render() {
 	tl.SetTitle("Logs")
-	tl.SetRoot(cview.NewTreeNode("Logs"))
+	tl.SetBorder(true)
+	tl.SetRoot(cview.NewTreeNode("."))
 
 	if len(tl.logs) == 0 {
 		return

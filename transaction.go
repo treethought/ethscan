@@ -95,7 +95,11 @@ func (d *TransactionData) render() {
 	} else {
 		to = cview.NewListItem("To")
 	}
-	to.SetSecondaryText(formatAddress(d.app.client, *msg.To()))
+	if msg.To() != nil {
+		to.SetSecondaryText(formatAddress(d.app.client, *msg.To()))
+	} else {
+		to.SetSecondaryText("none")
+	}
 	info.AddItem(to)
 
 	value := cview.NewListItem("Value")

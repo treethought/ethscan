@@ -117,29 +117,7 @@ func NewBlockTable(app *App) *BlockTable {
 	table.SetFixed(0, 0)
 	table.SetSelectable(true, false)
 	table.SetSelectedStyle(tcell.ColorBlueViolet, tcell.ColorDefault, 0)
-	table.SetSelectedFunc(func(row, _c int) {
-		if row == 0 {
-			return
-		}
-		table.app.log.Info("Selected block - row ", row)
-
-		// referene is currently only set on hash cell = col 2
-		cell := table.GetCell(row, 2)
-		ref := cell.GetReference()
-		num, ok := ref.(*big.Int)
-		if !ok {
-			log.Fatal("reference was not a big.Int blockNumber")
-		}
-		table.app.log.Info("Row reference number: ", num.String())
-		block, err := app.client.BlockByNumber(context.TODO(), num)
-		if err != nil {
-			table.app.log.Fatal(err)
-		}
-		table.app.state.SetBlock(block)
-		table.app.state.SetTxn(nil)
-		table.app.ShowBlockData(block)
-
-	})
+	table.SetSelectedFunc(table.handleSelect)
 
 	table.initBindings()
 
@@ -148,6 +126,7 @@ func NewBlockTable(app *App) *BlockTable {
 	return table
 
 }
+
 func (t *BlockTable) Update() {}
 
 func (t *BlockTable) initBindings() {
@@ -160,7 +139,6 @@ func (t *BlockTable) initBindings() {
 func (t *BlockTable) getCurrentRef() *big.Int {
 
 	row, _ := t.GetSelection()
-	t.app.log.Info("getting current selected block, row: ", row)
 	ref := t.GetCell(row, 2).GetReference()
 	num, ok := ref.(*big.Int)
 	if !ok {
@@ -168,6 +146,26 @@ func (t *BlockTable) getCurrentRef() *big.Int {
 		return nil
 	}
 	return num
+}
+
+func (t *BlockTable) handleSelect(row, _c int) {
+	if row == 0 {
+		return
+	}
+	// referene is currently only set on hash cell = col 2
+	cell := t.GetCell(row, 2)
+	ref := cell.GetReference()
+	num, ok := ref.(*big.Int)
+	if !ok {
+		log.Fatal("reference was not a big.Int blockNumber")
+	}
+	block, err := t.app.client.BlockByNumber(context.TODO(), num)
+	if err != nil {
+		t.app.log.Error("failed to get block by number", err)
+	}
+	t.app.state.SetBlock(block)
+	t.app.state.SetTxn(nil)
+	t.app.ShowBlockData(block)
 }
 
 func (t *BlockTable) handleOpen(ev *tcell.EventKey) *tcell.EventKey {
