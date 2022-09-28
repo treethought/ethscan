@@ -171,7 +171,7 @@ func (t TransactionTable) addTxn(ctx context.Context, row int, txn *types.Transa
 		// contract execution
 		method = common.Bytes2Hex(txn.Data()[:4])
 		go func() {
-			abi, err := util.GetContractABI(toField)
+			abi, err := util.GetContractABI(toField, t.app.config.EtherscanKey)
 			if err != nil {
 				t.app.log.Error("failed to get abi: ", err)
 			}

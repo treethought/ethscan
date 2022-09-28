@@ -43,7 +43,7 @@ func (tl *TransacionLogs) Update() {
 	}
 	tl.txn = txn
 	tl.logs = rec.Logs
-	abi, err := util.GetContractABI(txn.To().String())
+	abi, err := util.GetContractABI(txn.To().String(), tl.app.config.EtherscanKey)
 	if err != nil {
 		tl.app.log.Errorf("failed to get contract abi: %s %s", txn.To().String(), err)
 	}

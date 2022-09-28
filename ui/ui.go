@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"log"
 	"os"
 	"sync"
 
@@ -72,10 +73,17 @@ type App struct {
 	log      *golog.Logger
 	signer   types.Signer
 	state    *State
+	config   *Config
 }
 
-func NewApp(client *ethclient.Client) *App {
+func NewApp(config *Config) *App {
 	golog.SetLevel("debug")
+
+	client, err := ethclient.Dial(config.RpcUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	logFile, err := os.Create("./ethscan.log")
 	if err != nil {
 		panic(err)
@@ -92,6 +100,7 @@ func NewApp(client *ethclient.Client) *App {
 		log:      log,
 		signer:   util.GetSigner(context.TODO(), client),
 		state:    &State{},
+		config:   config,
 	}
 }
 

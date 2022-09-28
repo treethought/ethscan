@@ -1,20 +1,7 @@
 package main
 
-import (
-	"log"
-	"os"
-
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/treethought/ethscan/ui"
-)
+import "github.com/treethought/ethscan/cmd"
 
 func main() {
-	client, err := ethclient.Dial(os.Getenv("ENDPOINT"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	app := ui.NewApp(client)
-	app.Start()
-
+	cmd.Execute()
 }
