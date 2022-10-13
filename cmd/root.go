@@ -20,6 +20,13 @@ var rootCmd = &cobra.Command{
 	Short: "Ethereum block explorer for the terminal",
 	Run: func(cmd *cobra.Command, args []string) {
 		app := ui.NewApp(config)
+		app.Init()
+
+		if len(args) == 1 {
+			app.StartWith(args[0])
+			return
+		}
+
 		app.Start()
 
 	},

@@ -29,8 +29,8 @@ func NewTransactionData(app *App, txn *types.Transaction) *TransactionData {
 }
 
 func (d *TransactionData) Update() {
-	txn := d.app.state.txn
-	d.block = d.app.state.block
+	txn := d.app.State.txn
+	d.block = d.app.State.block
 	d.SetTransaction(txn)
 }
 

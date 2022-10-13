@@ -48,7 +48,7 @@ func (d *BlockData) SetBlock(block *types.Block) {
 	})
 }
 func (d *BlockData) Update() {
-	curBlock := d.app.state.block
+	curBlock := d.app.State.block
 	d.SetBlock(curBlock)
 }
 

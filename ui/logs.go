@@ -34,7 +34,7 @@ func (tl *TransacionLogs) Update() {
 		tl.GetRoot().ClearChildren()
 	}
 	tl.SetRoot(cview.NewTreeNode("Loading logs..."))
-	txn := tl.app.state.txn
+	txn := tl.app.State.txn
 
 	rec, err := tl.app.client.TransactionReceipt(context.TODO(), txn.Hash())
 	if err != nil {

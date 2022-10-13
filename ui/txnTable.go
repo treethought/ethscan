@@ -68,8 +68,8 @@ func NewTransactionTable(app *App, block *types.Block) *TransactionTable {
 		}
 
 		table.app.log.Debug("Row reference txn hash: ", txn.Hash().String())
-		table.app.state.SetBlock(block)
-		table.app.state.SetTxn(txn)
+		table.app.State.SetBlock(block)
+		table.app.State.SetTxn(txn)
 		table.app.ShowTransactonData(txn)
 	})
 

@@ -164,8 +164,8 @@ func (t *BlockTable) handleSelect(row, _c int) {
 	if err != nil {
 		t.app.log.Error("failed to get block by number", err)
 	}
-	t.app.state.SetBlock(block)
-	t.app.state.SetTxn(nil)
+	t.app.State.SetBlock(block)
+	t.app.State.SetTxn(nil)
 	t.app.ShowBlockData(block)
 }
 

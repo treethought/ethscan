@@ -3,11 +3,14 @@ package ui
 import (
 	"context"
 	"log"
+	"math/big"
 	"os"
+	"strconv"
 	"sync"
 
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gdamore/tcell/v2"
@@ -72,7 +75,7 @@ type App struct {
 	views    map[string]View
 	log      *golog.Logger
 	signer   types.Signer
-	state    *State
+	State    *State
 	config   *Config
 }
 
@@ -99,7 +102,7 @@ func NewApp(config *Config) *App {
 		views:    make(map[string]View),
 		log:      log,
 		signer:   util.GetSigner(context.TODO(), client),
-		state:    &State{},
+		State:    &State{},
 		config:   config,
 	}
 }
@@ -180,12 +183,12 @@ func (app *App) initViews() {
 
 func (a *App) setBindings() {
 	a.bindings.SetKey(tcell.ModNone, tcell.KeyEsc, func(ev *tcell.EventKey) *tcell.EventKey {
-		a.state.RevertView()
-		if a.state.currentView == "" {
+		a.State.RevertView()
+		if a.State.currentView == "" {
 			a.root.SetCurrentTab("blockFeed")
 			return nil
 		}
-		a.root.SetCurrentTab(a.state.currentView)
+		a.root.SetCurrentTab(a.State.currentView)
 		return nil
 	})
 
@@ -206,7 +209,7 @@ func (a *App) ShowBlockData(b *types.Block) {
 
 func (a *App) ShowView(v string) {
 	a.root.SetCurrentTab(v)
-	a.state.SetView(v)
+	a.State.SetView(v)
 }
 
 func (a *App) ShowBlocks() {
@@ -222,18 +225,94 @@ func (a *App) ShowTransactonData(txn *types.Transaction) {
 	txnLogs.Update()
 	a.ShowView("txnData")
 }
-func (a *App) Start() {
-	defer a.app.HandlePanic()
-	a.app.EnableMouse(true)
 
+func (a *App) Init() {
+	a.app.EnableMouse(true)
 	a.setBindings()
 	a.initViews()
+	a.app.SetRoot(a.root, true)
+}
+
+func (a *App) startWithBlockByNum(num int) error {
+	big := big.NewInt(int64(num))
+	block, err := a.client.BlockByNumber(context.TODO(), big)
+	if err != nil {
+		return err
+	}
+	a.State.SetBlock(block)
+	a.State.SetTxn(nil)
+
+	a.ShowBlockData(block)
+	a.Start()
+	return nil
+}
+
+func (a *App) startWithBlockByHash(hash string) error {
+	h := common.HexToHash(hash)
+	block, err := a.client.BlockByHash(context.TODO(), h)
+	if err != nil {
+		return err
+	}
+	a.State.SetBlock(block)
+	a.ShowBlockData(block)
+	a.Start()
+	return nil
+
+}
+
+func (a *App) startWithTxn(hash string) error {
+	ctx := context.TODO()
+	h := common.HexToHash(hash)
+
+	txn, _, err := a.client.TransactionByHash(context.Background(), h)
+	if err != nil {
+		return err
+	}
+	rec, err := a.client.TransactionReceipt(ctx, h)
+	if err != nil {
+		return err
+	}
+	block, err := a.client.BlockByHash(ctx, rec.BlockHash)
+	if err != nil {
+		return err
+	}
+	a.State.SetBlock(block)
+	a.State.SetTxn(txn)
+	a.ShowTransactonData(txn)
+	a.Start()
+	return nil
+
+}
+
+func (a *App) StartWith(ref string) {
+	num, err := strconv.Atoi(ref)
+	if err == nil {
+		err = a.startWithBlockByNum(num)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	err = a.startWithBlockByHash(ref)
+	if err == nil {
+		return
+	}
+
+	err = a.startWithTxn(ref)
+	if err == nil {
+		return
+	}
+
+	log.Fatal("failed to get block or txn with hash: ", ref)
+
+}
+
+func (a *App) Start() {
+	defer a.app.HandlePanic()
 
 	go a.broker.ListenForBlocks(context.TODO())
 
-	a.app.SetRoot(a.root, true)
-
 	if err := a.app.Run(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
