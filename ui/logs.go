@@ -120,7 +120,7 @@ func (tl *TransacionLogs) render() {
 	}
 
 	for _, l := range tl.logs {
-		addr := cview.NewTreeNode(fmt.Sprintf("Adress: %s", util.FormatAddress(tl.app.client, l.Address)))
+		addr := cview.NewTreeNode(fmt.Sprintf("Address: %s", util.FormatAddress(tl.app.client, l.Address)))
 
 		topics := cview.NewTreeNode("Topics")
 		for i, t := range l.Topics {
