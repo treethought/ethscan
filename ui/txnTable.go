@@ -9,6 +9,7 @@ import (
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/aquilax/truncate"
+	"github.com/atotto/clipboard"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -81,6 +82,7 @@ func (t *TransactionTable) initBindings() {
 	t.bindings = cbind.NewConfiguration()
 	t.SetInputCapture(t.bindings.Capture)
 	t.bindings.SetRune(tcell.ModNone, 'o', t.handleOpen)
+	t.bindings.SetRune(tcell.ModNone, 'y', t.handleCopy)
 
 }
 
@@ -101,6 +103,18 @@ func (t *TransactionTable) handleOpen(ev *tcell.EventKey) *tcell.EventKey {
 	util.Openbrowser(url)
 	return nil
 
+}
+
+func (t *TransactionTable) handleCopy(ev *tcell.EventKey) *tcell.EventKey {
+	txn := t.getCurrentRef()
+	if txn == nil {
+		return nil
+	}
+	err := clipboard.WriteAll(txn.Hash().String())
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
 }
 
 func (t *TransactionTable) getTransactions() {

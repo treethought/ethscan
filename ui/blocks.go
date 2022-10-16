@@ -10,6 +10,7 @@ import (
 	"code.rocketnine.space/tslocum/cbind"
 	"code.rocketnine.space/tslocum/cview"
 	"github.com/aquilax/truncate"
+	"github.com/atotto/clipboard"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gdamore/tcell/v2"
 	"github.com/treethought/ethscan/util"
@@ -134,6 +135,7 @@ func (t *BlockTable) initBindings() {
 	t.bindings = cbind.NewConfiguration()
 	t.SetInputCapture(t.bindings.Capture)
 	t.bindings.SetRune(tcell.ModNone, 'o', t.handleOpen)
+	t.bindings.SetRune(tcell.ModNone, 'y', t.handleCopy)
 
 }
 
@@ -178,6 +180,18 @@ func (t *BlockTable) handleOpen(ev *tcell.EventKey) *tcell.EventKey {
 	util.Openbrowser(url)
 	return nil
 
+}
+func (t *BlockTable) handleCopy(ev *tcell.EventKey) *tcell.EventKey {
+	curNum := t.getCurrentRef()
+	if curNum == nil {
+		return nil
+	}
+	err := clipboard.WriteAll(curNum.String())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return nil
 }
 
 func (t BlockTable) setTableHeader() {

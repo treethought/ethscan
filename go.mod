@@ -6,6 +6,7 @@ require (
 	code.rocketnine.space/tslocum/cbind v0.1.5
 	code.rocketnine.space/tslocum/cview v1.5.8
 	github.com/aquilax/truncate v1.0.0
+	github.com/atotto/clipboard v0.1.4
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/gdamore/tcell/v2 v2.5.2
 	github.com/go-resty/resty/v2 v2.7.0

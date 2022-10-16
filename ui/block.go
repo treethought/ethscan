@@ -80,7 +80,7 @@ func (d *BlockData) blockHeaders() *cview.Flex {
 	basic.AddItem(cview.NewListItem(fmt.Sprintf("Time: %s", time)))
 	basic.AddItem(cview.NewListItem(fmt.Sprintf("Parent: %s", parent)))
 
-	details.AddItem(cview.NewListItem(fmt.Sprintf("Coinbase (Proposer): %s", coinbase)))
+	details.AddItem(cview.NewListItem(fmt.Sprintf("Fee Recipient (Proposer): %s", coinbase)))
 	details.AddItem(cview.NewListItem(fmt.Sprintf("GasLimit: %d", gasLimit)))
 	details.AddItem(cview.NewListItem(fmt.Sprintf("GasUsed: %d", gasUsed)))
 	details.AddItem(cview.NewListItem(fmt.Sprintf("BaseFee: %s", baseFee)))

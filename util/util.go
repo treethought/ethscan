@@ -34,6 +34,7 @@ var commonAddresses = map[string]string{
 	"0xfd54078badd5653571726c3370afb127351a6f26": "Huobi 30",
 	"0x4103c267fba03a1df4fe84bc28092d629fa3f422": "Umbria: Narni Bridge",
 	"0xc098b2a3aa256d2140208c3de6543aaef5cd3a94": "FTX Exchange 2",
+	"0xDAFEA492D9c6733ae3d56b7Ed1ADB60692c98Bc5": "Flashbots: Builder",
 }
 
 func GetSigner(ctx context.Context, client *ethclient.Client) types.Signer {
