@@ -133,14 +133,15 @@ func (d *TransactionData) render() {
 	gasUsed.SetSecondaryText(fmt.Sprintf("%d (%.2f)%%", rec.GasUsed, pctUsed))
 	gas.AddItem(gasUsed)
 
-	gasFees := cview.NewListItem("Gas Fees (Gwei)")
-	gasFeeTxt := fmt.Sprintf("Base: %.2f | Max: %.2f | Max Priority: %.2f",
-		util.WeiToGwei(d.block.BaseFee()),
-		util.WeiToGwei(msg.GasFeeCap()),
-		util.WeiToGwei(msg.GasTipCap()))
-
-	gasFees.SetSecondaryText(gasFeeTxt)
-	gas.AddItem(gasFees)
+	if d.txn.Type() == 2 {
+		gasFees := cview.NewListItem("Gas Fees (Gwei)")
+		gasFeeTxt := fmt.Sprintf("Base: %.2f | Max: %.2f | Max Priority: %.2f",
+			util.WeiToGwei(d.block.BaseFee()),
+			util.WeiToGwei(msg.GasFeeCap()),
+			util.WeiToGwei(msg.GasTipCap()))
+		gasFees.SetSecondaryText(gasFeeTxt)
+		gas.AddItem(gasFees)
+	}
 
 	other := cview.NewList()
 	other.SetTitle("other")
