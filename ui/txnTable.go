@@ -83,6 +83,7 @@ func (t *TransactionTable) initBindings() {
 	t.SetInputCapture(t.bindings.Capture)
 	t.bindings.SetRune(tcell.ModNone, 'o', t.handleOpen)
 	t.bindings.SetRune(tcell.ModNone, 'y', t.handleCopy)
+	t.bindings.SetRune(tcell.ModNone, 'c', t.handleContract)
 
 }
 
@@ -114,6 +115,19 @@ func (t *TransactionTable) handleCopy(ev *tcell.EventKey) *tcell.EventKey {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return nil
+}
+
+func (t *TransactionTable) handleContract(ev *tcell.EventKey) *tcell.EventKey {
+	txn := t.getCurrentRef()
+	if txn == nil {
+		return nil
+	}
+
+	t.app.log.Debug("Row reference txn hash: ", txn.Hash().String())
+	t.app.State.SetContract(txn.To())
+	t.app.ShowContractData(txn)
+
 	return nil
 }
 
