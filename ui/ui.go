@@ -207,6 +207,10 @@ func (app *App) initViews() {
 
 func (a *App) setBindings() {
 	a.bindings.SetKey(tcell.ModNone, tcell.KeyEsc, func(ev *tcell.EventKey) *tcell.EventKey {
+		if !a.root.HasFocus() {
+			return ev
+		}
+
 		a.State.RevertView()
 		if a.State.currentView == "" {
 			a.root.SetCurrentTab("blockFeed")
@@ -258,8 +262,8 @@ func (a *App) ShowContractData(txn *types.Transaction) {
 
 func (a *App) Init() {
 	a.app.EnableMouse(true)
-	a.setBindings()
 	a.initViews()
+	a.setBindings()
 	a.app.SetRoot(a.root, true)
 }
 
