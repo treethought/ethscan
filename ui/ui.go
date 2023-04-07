@@ -20,10 +20,11 @@ import (
 
 type State struct {
 	sync.Mutex
-	block       *types.Block
-	txn         *types.Transaction
-	history     []string
-	currentView string
+	block           *types.Block
+	txn             *types.Transaction
+	contractAddress *common.Address
+	history         []string
+	currentView     string
 }
 
 func (s *State) SetBlock(b *types.Block) {
@@ -35,6 +36,11 @@ func (s *State) SetTxn(t *types.Transaction) {
 	s.Lock()
 	defer s.Unlock()
 	s.txn = t
+}
+func (s *State) SetContract(a *common.Address) {
+	s.Lock()
+	defer s.Unlock()
+	s.contractAddress = a
 }
 
 func (s *State) SetView(p string) {
@@ -136,7 +142,7 @@ func (app *App) initBlockFeed() *cview.Flex {
 }
 
 func (app *App) initTxnData() *cview.Flex {
-	app.log.Debug("initializing block feed layout")
+	app.log.Debug("initializing txn data layout")
 
 	txnData := NewTransactionData(app, nil)
 	app.views["txnData"] = txnData
@@ -155,18 +161,36 @@ func (app *App) initTxnData() *cview.Flex {
 
 }
 
+func (app *App) initContractData() *cview.Flex {
+	app.log.Debug("initializing contract data layout")
+
+	contractData := NewContractForm(app, nil)
+	app.views["contract"] = contractData
+
+	wrap := cview.NewFlex()
+	wrap.SetBackgroundTransparent(false)
+	wrap.SetBackgroundColor(tcell.ColorDefault)
+	wrap.SetDirection(cview.FlexRow)
+	wrap.AddItem(contractData, 0, 1, true)
+
+	return wrap
+
+}
+
 func (app *App) initViews() {
 	app.log.Debug("initializing views")
 
 	blockFeed := app.initBlockFeed()
 	blockData := app.initBlockData()
 	txnData := app.initTxnData()
+	contractData := app.initContractData()
 
 	dataPanels := cview.NewTabbedPanels()
 	dataPanels.SetTitle("panels")
 	dataPanels.AddTab("blockFeed", "blocks", blockFeed)
 	dataPanels.AddTab("blockData", "block data", blockData)
 	dataPanels.AddTab("txnData", "txn", txnData)
+	dataPanels.AddTab("contract", "contract", contractData)
 	dataPanels.SetCurrentTab("blockFeed")
 	dataPanels.SetBorder(false)
 	dataPanels.SetPadding(0, 0, 0, 0)
@@ -183,6 +207,10 @@ func (app *App) initViews() {
 
 func (a *App) setBindings() {
 	a.bindings.SetKey(tcell.ModNone, tcell.KeyEsc, func(ev *tcell.EventKey) *tcell.EventKey {
+		if !a.root.HasFocus() {
+			return ev
+		}
+
 		a.State.RevertView()
 		if a.State.currentView == "" {
 			a.root.SetCurrentTab("blockFeed")
@@ -225,11 +253,17 @@ func (a *App) ShowTransactonData(txn *types.Transaction) {
 	txnLogs.Update()
 	a.ShowView("txnData")
 }
+func (a *App) ShowContractData(txn *types.Transaction) {
+	a.log.Info("showing txn data for: ", txn.Hash().String())
+	contractData := a.views["contract"]
+	contractData.Update()
+	a.ShowView("contract")
+}
 
 func (a *App) Init() {
 	a.app.EnableMouse(true)
-	a.setBindings()
 	a.initViews()
+	a.setBindings()
 	a.app.SetRoot(a.root, true)
 }
 
