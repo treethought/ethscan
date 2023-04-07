@@ -17,35 +17,35 @@ type rawABIResponse struct {
 }
 
 type rawContractData struct {
-	SourceCode            string
-	ABI                   string
-	ContractName          string
-	CompilerVersion       string
-	OptimizationUsed      string
-	Runs                  string
-	ConstructorArgruments string
-	EVMVersion            string
-	Library               string
-	LicenseType           string
-	Proxy                 string
-	Implementation        string
-	SwarmSource           string
+	SourceCode           string
+	ABI                  string
+	ContractName         string
+	CompilerVersion      string
+	OptimizationUsed     string
+	Runs                 string
+	ConstructorArguments string
+	EVMVersion           string
+	Library              string
+	LicenseType          string
+	Proxy                string
+	Implementation       string
+	SwarmSource          string
 }
 
 type ContractData struct {
-	SourceCode            string
-	ABI                   *abi.ABI
-	ContractName          string
-	CompilerVersion       string
-	OptimizationUsed      bool
-	Runs                  int
-	ConstructorArgruments string
-	EVMVersion            string
-	Library               string
-	LicenseType           string
-	Proxy                 bool
-	Implementation        string
-	SwarmSource           string
+	SourceCode           string
+	ABI                  *abi.ABI
+	ContractName         string
+	CompilerVersion      string
+	OptimizationUsed     bool
+	Runs                 int
+	ConstructorArguments string
+	EVMVersion           string
+	Library              string
+	LicenseType          string
+	Proxy                bool
+	Implementation       string
+	SwarmSource          string
 }
 
 type contractDataResponse struct {
@@ -158,19 +158,19 @@ func GetContractData(address, apiKey string) (*ContractData, error) {
 	proxyBool, _ := strconv.ParseBool(result.Proxy)
 
 	c := &ContractData{
-		SourceCode:            result.SourceCode,
-		ABI:                   &contractABI,
-		ContractName:          result.ContractName,
-		CompilerVersion:       result.CompilerVersion,
-		OptimizationUsed:      optBool,
-		Runs:                  runsInt,
-		ConstructorArgruments: result.ConstructorArgruments,
-		EVMVersion:            result.EVMVersion,
-		Library:               result.Library,
-		LicenseType:           result.LicenseType,
-		Proxy:                 proxyBool,
-		Implementation:        result.Implementation,
-		SwarmSource:           result.SwarmSource,
+		SourceCode:           result.SourceCode,
+		ABI:                  &contractABI,
+		ContractName:         result.ContractName,
+		CompilerVersion:      result.CompilerVersion,
+		OptimizationUsed:     optBool,
+		Runs:                 runsInt,
+		ConstructorArguments: result.ConstructorArguments,
+		EVMVersion:           result.EVMVersion,
+		Library:              result.Library,
+		LicenseType:          result.LicenseType,
+		Proxy:                proxyBool,
+		Implementation:       result.Implementation,
+		SwarmSource:          result.SwarmSource,
 	}
 	return c, nil
 }
